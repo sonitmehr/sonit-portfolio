@@ -1,0 +1,32 @@
+.work-exp-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0 1rem;
+  border-radius: 0.5rem;
+  padding: 2rem;
+  margin: 1rem;
+  align-items: center;
+  background: rgb(50, 50, 50);
+}
+.work-exp-img {
+  height: 5rem;
+  /* width: 5rem; */
+  margin-bottom: 1rem;
+  object-fit: cover;
+}
+.company-name{
+  cursor: pointer;
+}
+a{
+  color: inherit;
+}
+@media screen and (max-width: 440px) {
+  .work-exp-desc {
+    font-size: 0.9rem;
+  }
+  .work-exp-title {
+    font-size: 3rem;
+    margin: 1rem;
+    
+  }
+}
