@@ -7,13 +7,13 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 firebase.json
-firebase
 node_modules
 dist
 dist-ssr
 *.local
 
 # Editor directories and files
+.firebase
 .vscode/*
 !.vscode/extensions.json
 .idea
