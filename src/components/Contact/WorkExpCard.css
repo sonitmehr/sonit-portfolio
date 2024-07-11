@@ -6,7 +6,8 @@
   padding: 2rem;
   margin: 1rem;
   align-items: center;
-  background: rgb(50, 50, 50);
+  justify-content: center;
+  background: #323232;
 }
 .work-exp-img {
   height: 5rem;
@@ -14,9 +15,7 @@
   margin-bottom: 1rem;
   object-fit: cover;
 }
-.company-name{
-  cursor: pointer;
-}
+
 a{
   color: inherit;
 }
@@ -28,5 +27,22 @@ a{
     font-size: 3rem;
     margin: 1rem;
     
+  }
+}
+
+@media screen and (max-width:480px){
+  .company-name{
+    font-size: 1.2rem;
+  }
+  .work-postion{
+    font-size: 0.7rem;
+  }
+}
+@media screen and (max-width:360px){
+  .company-name{
+    font-size: 1.1rem;
+  }
+  .work-postion{
+    font-size: 0.65rem;
   }
 }

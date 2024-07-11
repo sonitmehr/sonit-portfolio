@@ -14,17 +14,31 @@ function Intro() {
           Flutter Developer
         </span>
         <p className="intro-para">
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Aperiam, <br/>
-          dignissimos officiis voluptates dolor atque culpa ipsum?{" "}
+          I am a passionate and skilled Flutter developer,
+           with experience in creating cross-platform mobile and 
+          desktop applications that are both aesthetically pleasing and highly
+          functional.
         </p>
         <Link>
-          <button className="intro-btn">
+          <button
+            className="intro-btn"
+            onClick={() => {
+              document
+                .getElementById("contact")
+                .scrollIntoView({ behavior: "smooth" });
+            }}
+          >
             <img src={assets.hireMe} alt="" />
             Hire Me
           </button>
         </Link>
       </div>
-      <img src={assets.person} alt="" className="intro-image" />
+      {/* <img
+        src={
+         "../../assets/robot.png" }
+        alt=""
+        className="intro-image"
+      /> */}
     </section>
   );
 }

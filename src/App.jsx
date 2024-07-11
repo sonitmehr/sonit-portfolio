@@ -1,4 +1,5 @@
 import Contact from './components/Contact/Contact'
+import Footer from './components/Footer/Footer'
 import Intro from './components/Intro/Intro'
 import Navbar from './components/Navbar/Navbar'
 import Portfolio from './components/Portfolio/Portfolio'
@@ -12,6 +13,7 @@ function App() {
       <Skills/>
       <Portfolio/>
       <Contact/>
+      <Footer/>
     </>
   )
 }

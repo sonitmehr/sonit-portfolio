@@ -5,6 +5,9 @@
   max-width: 70rem;
   margin: 0 auto;
   overflow: hidden;
+  /* display: flex;
+  align-items: center;
+  justify-content: center; */
 }
 
 .intro-image {
@@ -13,19 +16,20 @@
   right: 0;
   z-index: -1;
   object-fit: cover;
-
   height: 100vh;
 }
 
 .intro-content {
   height: 100vh;
   width: 100vw;
+  /* background: #333; */
   padding: 2rem;
   font-size: 3.5rem;
   font-weight: 700;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  text-align: start;
   gap: 5px;
 }
 
@@ -39,8 +43,9 @@
 .intro-para {
   font-size: 1rem;
   letter-spacing: 1px;
-  font-weight: 300;
+  font-weight: 200;
   line-height: 25px;
+  max-width: 35rem;
 }
 .intro-btn {
   background: white;
@@ -59,21 +64,3 @@
 }
 
 
-@media screen and (max-width:840px) {
-    .intro-image{
-        right: -10vw;
-    }
-    .intro-content{
-        font-size: 10vw;
-    }
-    .hello{
-        font-size: 4.5vw;
-    }
-}
-@media screen and (max-width:480px) {
-    .intro-image{
-        right: -30vw;
-        /* height: 90vh; */
-    }
-    
-}

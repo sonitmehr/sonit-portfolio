@@ -1,4 +1,3 @@
-import React from "react";
 import "./WorkExpCard.css";
 
 function WorkExpCard(props) {
