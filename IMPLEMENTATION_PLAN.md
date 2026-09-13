@@ -417,6 +417,33 @@ service cloud.firestore {
 }
 ```
 
+#### Firebase Storage Security Rules (`storage.rules`)
+
+```
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Admin can upload and delete any file
+    match /{allPaths=**} {
+      allow read: if true;  // Public read for published images
+      allow write: if request.auth != null
+                   && request.auth.uid == 'R4yb7LzRJfhLQ31AQF6G6px2Eg73';
+    }
+
+    // Restrict file size (max 5 MB) and type (images only)
+    match /images/{imageId} {
+      allow write: if request.auth != null
+                   && request.auth.uid == 'R4yb7LzRJfhLQ31AQF6G6px2Eg73'
+                   && request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+  }
+}
+```
+> Storage path convention: `images/{collection}/{itemId}/{filename}` — e.g., `images/bucketList/abc123/japan-trip.jpg`
+> Free tier: 5 GB storage, 1 GB/day download, 20K/day upload operations.
+
 ---
 
 ### 7. Firestore Data Models
@@ -437,6 +464,28 @@ service cloud.firestore {
 }
 ```
 
+#### `config/categories` (single document) — **NEW (Dynamic Categories)**
+
+Categories are **not hardcoded** — they live in Firestore so you can add/rename/remove/reorder them from the admin Settings page without any code deploy.
+
+```json
+{
+  "bucketList": [
+    { "id": "places", "label": "Places to Visit", "icon": "🗺️", "color": "#4ECDC4", "enabled": true },
+    { "id": "gaming", "label": "Gaming Backlog", "icon": "🎮", "color": "#FF6B6B", "enabled": true },
+    { "id": "personal_growth", "label": "Personal Growth", "icon": "🌱", "color": "#95E1D3", "enabled": true }
+  ],
+  "career": [
+    { "id": "frontend", "label": "Frontend", "icon": "🖥️", "color": "#6C5CE7" },
+    { "id": "system_design", "label": "System Design", "icon": "🏗️", "color": "#FDCB6E" },
+    { "id": "dsa", "label": "DSA", "icon": "🧮", "color": "#E17055" },
+    { "id": "cloud", "label": "Cloud", "icon": "☁️", "color": "#74B9FF" }
+  ],
+  "updatedAt": "<timestamp>"
+}
+```
+> Adding a new category (e.g., "Books to Read") = one admin Settings action. The Bucket List UI reads this dynamically and renders tabs accordingly. No code changes needed.
+
 #### `bucketList/{id}`
 
 ```json
@@ -449,12 +498,14 @@ service cloud.firestore {
   "targetDate": "<timestamp or null>",
   "completedAt": "<timestamp or null>",
   "notes": "Save up for the trip",
+  "imageUrl": "https://firebasestorage.googleapis.com/... or null",
   "isPublic": false,
   "createdAt": "<timestamp>",
   "updatedAt": "<timestamp>"
 }
 ```
-> `category` values: `"places"` | `"gaming"` | `"personal_growth"`
+> `category` values: dynamic — read from `config/categories.bucketList[].id`
+> `imageUrl`: optional — uploaded via admin dashboard, stored in Firebase Storage
 
 #### `gamingProgress/{id}`
 
@@ -505,6 +556,7 @@ service cloud.firestore {
     { "title": "Design URL shortener", "completed": false }
   ],
   "notes": "Focus on distributed systems patterns",
+  "imageUrl": "https://firebasestorage.googleapis.com/... or null",
   "isPublic": false,
   "createdAt": "<timestamp>",
   "updatedAt": "<timestamp>"
@@ -513,6 +565,7 @@ service cloud.firestore {
 > `type` values: `"skill"` | `"learning_goal"` | `"milestone"` (promotion, certification, etc.)
 > `proficiencyLevel` values: `"beginner"` | `"intermediate"` | `"advanced"` | `"expert"`
 > `status` values: `"not_started"` | `"learning"` | `"proficient"` | `"completed"`
+> `category` values: dynamic — read from `config/categories.career[].id`
 
 #### `publicShowcase/{id}`
 
@@ -523,11 +576,13 @@ service cloud.firestore {
   "sourceType": "places",
   "sourceId": "bucketList/abc123",
   "icon": "🗺️",
+  "imageUrl": "https://firebasestorage.googleapis.com/... or null",
   "completedAt": "<timestamp>",
   "createdAt": "<timestamp>"
 }
 ```
-> `sourceType` values: `"places"` | `"gaming"` | `"personal_growth"` | `"career"`
+> `sourceType` values: dynamic — matches any category `id` from `config/categories`, plus `"career"`
+> `imageUrl`: copied from the source item's imageUrl when published
 > This collection is populated when admin toggles `isPublic: true` on any item or explicitly publishes to showcase.
 
 #### `contactMessages/{id}`
@@ -548,7 +603,7 @@ service cloud.firestore {
 
 | Package | Purpose | Where |
 |---|---|---|
-| `firebase` | Firebase JS SDK (Auth, Firestore, App Check) | Frontend |
+| `firebase` | Firebase JS SDK (Auth, Firestore, **Storage**, App Check) | Frontend |
 | `react-router-dom` | Client-side routing for admin vs public | Frontend |
 | `firebase-functions` | Cloud Functions runtime | `functions/` |
 | `firebase-admin` | Admin SDK for Firestore from Cloud Functions | `functions/` |
@@ -563,6 +618,7 @@ service cloud.firestore {
 sonit-portfolio/
 ├── firebase.json                         [NEW]
 ├── firestore.rules                       [NEW]
+├── storage.rules                         [NEW — Firebase Storage security]
 ├── firestore.indexes.json                [NEW]
 ├── .firebaserc                           [EXISTS]
 ├── .env                                  [NEW — gitignored, Firebase config]
@@ -575,12 +631,16 @@ sonit-portfolio/
 │       └── psn.js
 ├── src/
 │   ├── lib/
-│   │   └── firebase.js                   [NEW]
+│   │   ├── firebase.js                   [NEW]
+│   │   └── storage.js                    [NEW — upload/delete helpers]
 │   ├── contexts/
 │   │   └── AuthContext.jsx               [NEW]
 │   ├── components/
 │   │   ├── ProtectedRoute/
 │   │   │   └── ProtectedRoute.jsx        [NEW]
+│   │   ├── ImageUpload/
+│   │   │   ├── ImageUpload.jsx           [NEW — reusable upload component]
+│   │   │   └── ImageUpload.css           [NEW]
 │   │   ├── Showcase/
 │   │   │   ├── Showcase.jsx              [NEW]
 │   │   │   └── Showcase.css              [NEW]
@@ -633,13 +693,15 @@ sonit-portfolio/
 
 ### Phase 2 — Admin Dashboard Shell
 - `AdminLayout` with mobile bottom-tab nav + desktop sidebar
-- `SiteSettings` page — section toggles
+- `SiteSettings` page — section toggles + **dynamic category management** (add/rename/remove/reorder categories)
+- Seed `config/categories` with default categories (Places, Gaming Backlog, Personal Growth)
 - Wire up `config/site` reads on the public site to conditionally render sections
 
 ### Phase 3 — Bucket List
-- `BucketList` page with three tabs: Places, Gaming Backlog, Personal Growth
+- `BucketList` page with **dynamic tabs** (reads from `config/categories.bucketList`)
 - Full CRUD for each category
-- "Publish to Public" toggle per item
+- **Image upload** per item (Firebase Storage + `ImageUpload` component)
+- "Publish to Public" toggle per item (copies to `publicShowcase` with `imageUrl`)
 - `publicShowcase` collection writes
 
 ### Phase 4 — Career Growth Tracker
@@ -662,6 +724,7 @@ sonit-portfolio/
 ### Phase 7 — Security & Polish
 - Firebase App Check setup
 - Firestore rules deployment and testing
+- **Firebase Storage rules** deployment (admin upload, public read for published images)
 - Rate limiting on contact form
 - Client-side caching (`localStorage` + TTL)
 - Budget alert setup in Google Cloud Console
