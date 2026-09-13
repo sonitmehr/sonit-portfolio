@@ -10,7 +10,10 @@ Add a Firebase-backed personal tracker with admin authentication, gaming progres
 |---|---|
 | Auth method | Firebase Email/Password (single admin account) |
 | Gaming platforms | **Both** PlayStation (psn-api) + Steam (Web API) |
-| Bucket list layout | Separate sections per category |
+| Bucket list layout | Separate sections per category (dynamic via `config/categories`) |
+| Bucket list gamification | **ACTIVE** — Gamified tracking: XP per item, Levels & Ranks, Badges/Achievements, Streaks, Confetti/Celebration animations, and an interactive Gamified Progress Dashboard |
+| Admin overview dashboard | **Gamified Progress Dashboard** — Hero Level card, XP progress bar, Category completion rings, Active Quests log, Badges showcase, and Activity timeline |
+| Firebase Storage | **PENDING / DEFERRED** — Storage setup deferred until Blaze upgrade. Support direct image URLs with instant preview in the meantime; direct upload architecture preserved for post-MVP upgrade |
 | Public visibility | Private by default. Admin can selectively publish items to a new **"Get to Know Me Better"** public section |
 | Admin entry point | Secret — hidden gesture or URL, accessible on mobile |
 | Gaming sync | Monthly scheduled Cloud Function cron |
@@ -50,6 +53,12 @@ const firebaseConfig = {
 
 ## User Review Required
 
+> [!NOTE]
+> **Firebase Storage — Deferred to Pending Stage**
+> Since Firebase Storage requires an account/plan upgrade, direct file upload has been moved to the **Pending Stage** (deferred).
+> - **Current behavior:** All items (Bucket List, Career Goals, Public Showcase) support direct **image URLs** (e.g., Unsplash, Cloudinary, Imgur, or direct web links) with instant preview and fallback placeholder icons.
+> - **Future seamless upgrade:** `storage.rules`, helper service, and `ImageUpload` component are fully mapped out and ready to deploy as soon as the project is upgraded.
+
 > [!IMPORTANT]
 > **Gaming API Credentials Needed**
 > - **Steam:** You'll need a Steam Web API key (free, get it at [steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey)) and your Steam ID (64-bit).
@@ -72,56 +81,41 @@ const firebaseConfig = {
 
 ## Proposed Architecture
 
-```
-┌───────────────────────────────────────────────────────┐
-│                 FRONTEND (React + Vite)                │
-│                                                        │
-│  ┌────────────────────┐  ┌──────────────────────────┐ │
-│  │   Public Site       │  │ Secret Admin Dashboard   │ │
-│  │   - Intro           │  │ (mobile-first, auth-gated)│
-│  │   - Skills          │  │                          │ │
-│  │   - Portfolio       │  │ - Bucket List Manager    │ │
-│  │   - Work Exp        │  │   ├ Places to Visit      │ │
-│  │   - Contact         │  │   ├ Gaming Backlog       │ │
-│  │   - Footer          │  │   └ Personal Growth      │ │
-│  │   - "Get to Know    │  │ - Gaming Tracker         │ │
-│  │      Me Better"     │  │   (Steam + PSN sync)     │ │
-│  │   (admin-curated)   │  │ - Career Growth Tracker  │ │
-│  │                     │  │ - Site Config Panel      │ │
-│  │   (all configurable)│  │ - Publish-to-Public ctrl │ │
-│  └────────────────────┘  └──────────────────────────┘ │
-│            ▲ secret entry: hidden gesture / URL        │
-└──────────────┬──────────────────────┬──────────────────┘
-               │                      │
-               │ Firestore SDK        │ Firestore SDK
-               │ (public reads only)  │ (full CRUD)
-               ▼                      ▼
-┌───────────────────────────────────────────────────────┐
-│                  FIREBASE SERVICES                     │
-│                                                        │
-│  ┌──────────────┐  ┌───────────────────────────────┐  │
-│  │ Firebase Auth │  │ Cloud Firestore               │  │
-│  │ (email/pass,  │  │                               │  │
-│  │  single admin)│  │ - config/site                 │  │
-│  └──────────────┘  │ - bucketList/{id}              │  │
-│                     │ - gamingProgress/{id}          │  │
-│  ┌──────────────┐  │ - careerGoals/{id}             │  │
-│  │Cloud Functions│  │ - publicShowcase/{id}          │  │
-│  │               │  │ - contactMessages/{id}         │  │
-│  │ - syncSteam   │  │ - rateLimits/{entry}           │  │
-│  │   (monthly)   │  └───────────────────────────────┘  │
-│  │ - syncPSN     │                                     │
-│  │   (monthly)   │  ┌───────────────────────────────┐  │
-│  │ - contactMsg  │  │ Firebase App Check             │  │
-│  │ - cleanup     │  │ (DDoS / abuse protection)      │  │
-│  └──────────────┘  └───────────────────────────────┘  │
-└───────────────────────────────────────────────────────┘
-               │                      │
-               ▼                      ▼
-       ┌──────────────┐      ┌──────────────┐
-       │ Steam Web API│      │ PSN API      │
-       │ (via key)    │      │ (via NPSSO)  │
-       └──────────────┘      └──────────────┘
+```mermaid
+flowchart TD
+  subgraph Frontend ["Frontend (React + Vite)"]
+    subgraph Public ["Public Site"]
+      P1["Intro / Skills / Portfolio / Work Exp / Contact"]
+      P2["Get to Know Me Better (Curated Showcase)"]
+    end
+    subgraph Admin ["Secret Admin Dashboard (Mobile-First)"]
+      A1["🎮 Gamified Dashboard (Level, XP, Category Rings, Quests)"]
+      A2["📋 Bucket List Manager (Dynamic Categories + Gamification)"]
+      A3["🕹️ Gaming Tracker (Steam + PSN Sync)"]
+      A4["🚀 Career Growth Tracker (Roadmap & Goals)"]
+      A5["⚙️ Settings & Dynamic Categories Config"]
+    end
+  end
+
+  subgraph Firebase ["Firebase Services"]
+    Auth["Firebase Auth (Admin Email/Password)"]
+    AppCheck["App Check (DDoS / Bot Protection)"]
+    Firestore[("Cloud Firestore")]
+    Functions["Cloud Functions (Monthly Steam/PSN Cron & Contact)"]
+    Storage["Firebase Storage [PENDING STAGE]"]
+  end
+
+  subgraph External ["External Gaming APIs"]
+    Steam["Steam Web API"]
+    PSN["PlayStation Network API"]
+  end
+
+  Admin -->|Full CRUD| Firestore
+  Public -->|Public Read-Only| Firestore
+  Admin -->|Auth & Token| Auth
+  Functions -->|Monthly Sync| Steam
+  Functions -->|Monthly Sync| PSN
+  Functions -->|Upsert Data| Firestore
 ```
 
 ---
@@ -247,36 +241,67 @@ Admin login page:
 
 #### [NEW] `src/pages/Admin/AdminLayout.jsx` + `AdminLayout.css`
 Admin dashboard layout:
-- **Mobile:** Bottom tab navigation (Bucket List, Gaming, Career, Settings)
-- **Desktop:** Sidebar navigation
-- Header with user info and logout button
-- Dark theme matching the portfolio
+- **Mobile:** Bottom tab navigation (Dashboard, Bucket List, Gaming, Career, Settings)
+- **Desktop:** Sidebar navigation with collapsed/expanded states
+- Header with user profile, current Level badge ("Lv. 3 Adventurer"), XP pill, and logout button
+- Dark theme matching the portfolio with sleek glassmorphism accents
+
+---
+
+#### [NEW] `src/pages/Admin/Dashboard/Dashboard.jsx` + `Dashboard.css`
+**Gamified Progress Dashboard (Primary Admin Hub):**
+- **Hero Level Card:**
+  - Dynamic Level number & Rank title (e.g., "Level 4 • Pathfinder")
+  - Total XP counter with animated progress bar towards the next level
+  - Active Streak indicator (consecutive months with completed goals)
+  - Completion velocity (items completed this month vs previous month)
+- **Category Progress Rings:**
+  - Interactive circular progress gauges for each category (Places, Gaming, Growth, plus custom categories)
+  - Displays completed vs total count and completion percentage
+- **Active Quests (Quest Log):**
+  - Highlights top 3 in-progress items prioritized by difficulty/XP
+  - One-click completion trigger directly from the dashboard
+- **Badges & Achievements Showcase:**
+  - Grid of unlockable milestone badges:
+    - 🌟 *First Step:* Complete 1st bucket list item
+    - 🗺️ *Globetrotter:* Complete 5 travel destinations
+    - 🎮 *Backlog Slayer:* Complete 5 gaming backlog titles
+    - 🌱 *Self Master:* Complete 5 personal growth goals
+    - ⚡ *High Achiever:* Complete 3 High or Epic priority goals
+    - 💎 *Century Club:* Cross 1,000 total XP
+    - 🔥 *Streak Master:* Keep a 3-month completion streak
+  - Glowing colored badges for unlocked achievements; sleek silhouettes with progress tips for locked ones
+- **Recent Activity Timeline:**
+  - Feed of recently completed items with timestamp, XP earned (+250 XP 🌟), and celebratory tags
 
 ---
 
 #### [NEW] `src/pages/Admin/BucketList/BucketList.jsx` + `BucketList.css`
-Bucket list management page with **three separate tabs/sections:**
+Bucket list management page with **dynamic category tabs & gamified mechanics:**
 
-##### Places to Visit
-- Add/edit/delete destinations
-- Fields: place name, country, description, priority, status, target date, notes
-- Mark as visited with completion date
-
-##### Gaming Backlog
-- Manually curated list of games you want to play (separate from API-synced progress)
-- Fields: game title, platform, priority, status, notes
-- Can link to a `gamingProgress` entry if synced data exists
-
-##### Personal Growth Goals
-- Fields: goal title, description, category tag, priority, status, target date, milestones (sub-items), notes
-- Track progress with milestone checkboxes
-
-##### Common features across all three:
-- CRUD operations with inline editing
-- Filter by status (todo / in-progress / completed)
-- Sort by priority or date
-- **"Publish to Public"** toggle per item → copies item to `publicShowcase` collection for the public "Get to Know Me Better" section
-- Swipe-to-complete / swipe-to-delete on mobile
+##### Gamified Item Structure & Controls:
+- **Difficulty & XP Assignment:**
+  - `Casual` (50 XP) | `Moderate` (100 XP) | `Challenging` (250 XP) | `Epic` (500 XP)
+  - Auto-calculates XP value based on difficulty with optional custom XP override
+- **Interactive Completion Experience:**
+  - Checkbox triggers the gamification completion flow:
+    - Instant reward animation (confetti burst via `canvas-confetti` + XP floating notification)
+    - Updates item status to `completed` and records `completedAt` timestamp
+    - Automatically updates `userStats/gamification` (awards XP, checks badge unlock conditions, logs recent activity)
+    - Level-up modal if XP surpasses the next level threshold
+- **Un-completing / Deletion Handling:**
+  - Unchecking an item automatically rolls back its awarded XP and updates category counts
+  - Safe delete confirmation modal with automatic XP subtraction if the deleted item was completed
+- **Category Tabs (Dynamic):**
+  - Reads categories from `config/categories.bucketList` (Places to Visit, Gaming Backlog, Personal Growth, etc.)
+  - Filter by status: All, In Progress, Completed
+  - Sort by: Priority, XP Value, Date Created, Target Date
+- **Image URL Support (Direct Preview):**
+  - Text input for image URL (Unsplash, Cloudinary, Imgur, direct link) with live preview thumbnail
+  - *(Firebase Storage direct file upload deferred to Pending Stage)*
+- **"Publish to Public" Toggle:**
+  - Publishes item to `publicShowcase` collection for the public "Get to Know Me Better" section
+  - Mobile-optimized card list with swipe gestures and quick-action menu
 
 ---
 
@@ -361,13 +386,18 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function isAdmin() {
-      return request.auth != null && request.auth.uid == 'YOUR_ADMIN_UID';
+      return request.auth != null && request.auth.uid == 'R4yb7LzRJfhLQ31AQF6G6px2Eg73';
     }
 
-    // Site config — public read, admin write
+    // Site config & categories — public read, admin write
     match /config/{document} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    // User stats & gamification — admin only (private)
+    match /userStats/{doc} {
+      allow read, write: if isAdmin();
     }
 
     // Bucket list — admin only (private)
@@ -417,7 +447,9 @@ service cloud.firestore {
 }
 ```
 
-#### Firebase Storage Security Rules (`storage.rules`)
+#### [PENDING STAGE] Firebase Storage Security Rules (`storage.rules`)
+
+*(Storage upload deferred until Blaze upgrade. Pre-configured rules ready for future deployment:)*
 
 ```
 rules_version = '2';
@@ -442,7 +474,7 @@ service firebase.storage {
 }
 ```
 > Storage path convention: `images/{collection}/{itemId}/{filename}` — e.g., `images/bucketList/abc123/japan-trip.jpg`
-> Free tier: 5 GB storage, 1 GB/day download, 20K/day upload operations.
+> Free tier (once enabled): 5 GB storage, 1 GB/day download, 20K/day upload operations.
 
 ---
 
@@ -486,6 +518,39 @@ Categories are **not hardcoded** — they live in Firestore so you can add/renam
 ```
 > Adding a new category (e.g., "Books to Read") = one admin Settings action. The Bucket List UI reads this dynamically and renders tabs accordingly. No code changes needed.
 
+#### `userStats/gamification` (single document) — **NEW (Gamification Stats)**
+
+```json
+{
+  "totalXp": 850,
+  "currentLevel": 3,
+  "levelTitle": "Adventurer",
+  "streakMonths": 2,
+  "totalCompleted": 7,
+  "unlockedBadges": [
+    { "id": "first_step", "title": "First Step", "unlockedAt": "<timestamp>", "icon": "🌟" },
+    { "id": "globetrotter", "title": "Globetrotter", "unlockedAt": "<timestamp>", "icon": "🗺️" }
+  ],
+  "categoryBreakdown": {
+    "places": { "completed": 3, "total": 8 },
+    "gaming": { "completed": 2, "total": 6 },
+    "personal_growth": { "completed": 2, "total": 5 }
+  },
+  "recentActivity": [
+    { "id": "act_1", "itemId": "abc123", "title": "Visit Kyoto", "xpGained": 250, "date": "<timestamp>" }
+  ],
+  "updatedAt": "<timestamp>"
+}
+```
+> Maintained automatically by the gamification engine in `src/lib/gamification.js`.
+> Level progression formula:
+> - Level 1: Novice (0 - 200 XP)
+> - Level 2: Trailblazer (201 - 500 XP)
+> - Level 3: Adventurer (501 - 1,000 XP)
+> - Level 4: Pathfinder (1,001 - 2,000 XP)
+> - Level 5: Master of Horizons (2,001 - 3,500 XP)
+> - Level 6: Grandmaster (3,501+ XP)
+
 #### `bucketList/{id}`
 
 ```json
@@ -493,19 +558,22 @@ Categories are **not hardcoded** — they live in Firestore so you can add/renam
   "title": "Visit Japan",
   "description": "Cherry blossom season in Kyoto",
   "category": "places",
+  "difficulty": "challenging",
+  "xpValue": 250,
   "priority": "high",
   "status": "todo",
   "targetDate": "<timestamp or null>",
   "completedAt": "<timestamp or null>",
   "notes": "Save up for the trip",
-  "imageUrl": "https://firebasestorage.googleapis.com/... or null",
+  "imageUrl": "https://images.unsplash.com/... or null",
   "isPublic": false,
   "createdAt": "<timestamp>",
   "updatedAt": "<timestamp>"
 }
 ```
 > `category` values: dynamic — read from `config/categories.bucketList[].id`
-> `imageUrl`: optional — uploaded via admin dashboard, stored in Firebase Storage
+> `difficulty` values: `"casual"` (50 XP) | `"moderate"` (100 XP) | `"challenging"` (250 XP) | `"epic"` (500 XP)
+> `imageUrl`: direct image URL for now; direct Firebase Storage file upload is pending future upgrade
 
 #### `gamingProgress/{id}`
 
@@ -603,8 +671,9 @@ Categories are **not hardcoded** — they live in Firestore so you can add/renam
 
 | Package | Purpose | Where |
 |---|---|---|
-| `firebase` | Firebase JS SDK (Auth, Firestore, **Storage**, App Check) | Frontend |
+| `firebase` | Firebase JS SDK (Auth, Firestore, App Check; Storage pending) | Frontend |
 | `react-router-dom` | Client-side routing for admin vs public | Frontend |
+| `canvas-confetti` | Celebratory confetti bursts upon goal completion & level ups | Frontend |
 | `firebase-functions` | Cloud Functions runtime | `functions/` |
 | `firebase-admin` | Admin SDK for Firestore from Cloud Functions | `functions/` |
 | `psn-api` | PlayStation Network trophy/game data | `functions/` |
@@ -617,8 +686,8 @@ Categories are **not hardcoded** — they live in Firestore so you can add/renam
 ```
 sonit-portfolio/
 ├── firebase.json                         [NEW]
-├── firestore.rules                       [NEW]
-├── storage.rules                         [NEW — Firebase Storage security]
+├── firestore.rules                       [NEW — includes userStats rule]
+├── storage.rules                         [PENDING STAGE — pre-configured for Blaze upgrade]
 ├── firestore.indexes.json                [NEW]
 ├── .firebaserc                           [EXISTS]
 ├── .env                                  [NEW — gitignored, Firebase config]
@@ -632,15 +701,14 @@ sonit-portfolio/
 ├── src/
 │   ├── lib/
 │   │   ├── firebase.js                   [NEW]
-│   │   └── storage.js                    [NEW — upload/delete helpers]
+│   │   ├── gamification.js               [NEW — XP, levels, badges, streak, completion helpers]
+│   │   └── storage.js                    [PENDING STAGE — upload helpers for future upgrade]
 │   ├── contexts/
 │   │   └── AuthContext.jsx               [NEW]
 │   ├── components/
 │   │   ├── ProtectedRoute/
 │   │   │   └── ProtectedRoute.jsx        [NEW]
-│   │   ├── ImageUpload/
-│   │   │   ├── ImageUpload.jsx           [NEW — reusable upload component]
-│   │   │   └── ImageUpload.css           [NEW]
+│   │   ├── ImageUpload/                  [PENDING STAGE — direct file upload deferred]
 │   │   ├── Showcase/
 │   │   │   ├── Showcase.jsx              [NEW]
 │   │   │   └── Showcase.css              [NEW]
@@ -655,10 +723,13 @@ sonit-portfolio/
 │   │   │   ├── Login.jsx                 [NEW]
 │   │   │   └── Login.css                 [NEW]
 │   │   └── Admin/
-│   │       ├── AdminLayout.jsx           [NEW]
+│   │       ├── AdminLayout.jsx           [NEW — bottom nav on mobile, sidebar on desktop]
 │   │       ├── AdminLayout.css           [NEW]
+│   │       ├── Dashboard/
+│   │       │   ├── Dashboard.jsx         [NEW — Gamified progress dashboard]
+│   │       │   └── Dashboard.css         [NEW]
 │   │       ├── BucketList/
-│   │       │   ├── BucketList.jsx        [NEW]
+│   │       │   ├── BucketList.jsx        [NEW — dynamic tabs + gamified completion + URL preview]
 │   │       │   └── BucketList.css        [NEW]
 │   │       ├── Gaming/
 │   │       │   ├── GamingTracker.jsx     [NEW]
@@ -667,7 +738,7 @@ sonit-portfolio/
 │   │       │   ├── CareerTracker.jsx     [NEW]
 │   │       │   └── CareerTracker.css     [NEW]
 │   │       └── Settings/
-│   │           ├── SiteSettings.jsx      [NEW]
+│   │           ├── SiteSettings.jsx      [NEW — section toggles & dynamic categories]
 │   │           └── SiteSettings.css      [NEW]
 │   ├── App.jsx                           [MODIFY]
 │   ├── App.css                           [EXISTS]
@@ -684,25 +755,35 @@ sonit-portfolio/
 
 ### Phase 1 — Foundation
 - Firebase project config (`firebase.json`, `.env`, `firestore.rules`)
-- `src/lib/firebase.js` — SDK init
+- `src/lib/firebase.js` — SDK initialization
 - `react-router-dom` routing in `App.jsx`
 - `AuthContext` + `ProtectedRoute`
 - `Login` page (mobile-first)
 - Secret entry: long-press logo + `/admin` URL route
 - Create admin account in Firebase Console
 
-### Phase 2 — Admin Dashboard Shell
+### Phase 2 — Admin Dashboard Shell & Gamification Engine
 - `AdminLayout` with mobile bottom-tab nav + desktop sidebar
+- `src/lib/gamification.js` — XP, levels, badges, streaks, and activity logging engine
+- `Dashboard` page — **Gamified Progress Dashboard**:
+  - Hero Level Card (Level, XP progress bar, active streak)
+  - Category Completion Rings (interactive circular gauges)
+  - Active Quests log (quick-complete top items)
+  - Badges & Achievements Grid (locked/unlocked milestone badges)
+  - Recent activity feed
 - `SiteSettings` page — section toggles + **dynamic category management** (add/rename/remove/reorder categories)
-- Seed `config/categories` with default categories (Places, Gaming Backlog, Personal Growth)
+- Seed `config/categories` with default categories and initialize `userStats/gamification`
 - Wire up `config/site` reads on the public site to conditionally render sections
 
-### Phase 3 — Bucket List
+### Phase 3 — Bucket List & Gamified Completion Experience
 - `BucketList` page with **dynamic tabs** (reads from `config/categories.bucketList`)
-- Full CRUD for each category
-- **Image upload** per item (Firebase Storage + `ImageUpload` component)
-- "Publish to Public" toggle per item (copies to `publicShowcase` with `imageUrl`)
-- `publicShowcase` collection writes
+- Full CRUD for each category with difficulty and XP assignment (Casual 50 XP, Moderate 100 XP, Challenging 250 XP, Epic 500 XP)
+- **Interactive completion experience:**
+  - Checkbox click triggers celebratory confetti (`canvas-confetti`) and floating XP indicator
+  - Awards XP, recalculates levels, evaluates badge conditions, logs activity
+  - Unchecking/deletion cleanly rolls back XP and updates category counts
+- **Image URL input with live preview** (external URLs supported; direct storage upload deferred)
+- "Publish to Public" toggle per item (copies to `publicShowcase` collection)
 
 ### Phase 4 — Career Growth Tracker
 - `CareerTracker` page: Skills Roadmap, Learning Goals, Career Milestones
@@ -723,12 +804,16 @@ sonit-portfolio/
 
 ### Phase 7 — Security & Polish
 - Firebase App Check setup
-- Firestore rules deployment and testing
-- **Firebase Storage rules** deployment (admin upload, public read for published images)
+- Firestore rules deployment and testing (including `/userStats/{doc}`)
 - Rate limiting on contact form
 - Client-side caching (`localStorage` + TTL)
 - Budget alert setup in Google Cloud Console
 - Clean up `index.html` inline Firebase script
+
+### [PENDING STAGE — Post-MVP / Upon Blaze Upgrade]
+- Enable Firebase Storage in Console
+- Deploy `storage.rules`
+- Implement `ImageUpload` drag-and-drop / camera upload component
 
 ---
 
@@ -736,18 +821,23 @@ sonit-portfolio/
 
 ### Automated Tests
 - Firestore rules: test locally using `firebase emulators:start` + `@firebase/rules-unit-testing`
+- Gamification math: unit tests for XP accumulation, level progression thresholds, and badge condition checks
 - Cloud Functions: test locally using Firebase emulator suite
 - Verify monthly cron fires correctly in emulator
 
 ### Manual Verification
 - **Auth flow:** Login from mobile, access admin, verify public site shows no admin links
 - **Secret entry:** Test long-press gesture on mobile, test `/admin` URL
-- **Bucket List:** Add/edit/delete across all 3 categories, verify Firestore writes
+- **Gamified Dashboard:** Check Hero Level card, XP progress bar, Category completion rings, and Badges showcase
+- **Gamified Completion:** Check off a bucket list item — verify confetti animation, XP award, level progress increase, and activity feed update
+- **XP Rollback on Uncheck/Delete:** Uncheck an item or delete a completed item — verify XP is cleanly deducted and category total adjusts
+- **Dynamic Categories:** Add a new category in Settings, verify a new tab immediately appears in Bucket List
+- **Direct Image URLs:** Paste an image URL (e.g., Unsplash), verify instant preview renders cleanly on both admin and public showcase
 - **Career Tracker:** Add skills, learning goals, milestones — verify data persistence
 - **Publish to Public:** Toggle items public, verify they appear in "Get to Know Me Better"
 - **Gaming Sync:** Trigger manual sync, verify Steam + PSN data populates
 - **Site Config:** Toggle sections off, verify public site hides them
 - **Contact Form:** Submit from public site, verify message stored in Firestore (not via EmailJS)
 - **Rate Limiting:** Attempt rapid contact form submissions, verify rejection
-- **Mobile UI:** Test all admin pages on phone-sized viewport
+- **Mobile UI:** Test all admin pages and bottom navigation on phone-sized viewport
 - **Billing:** Confirm budget alert is set in Google Cloud Console
