@@ -19,6 +19,35 @@ Add a Firebase-backed personal tracker with admin authentication, gaming progres
 
 ---
 
+## Firebase Credentials
+
+> [!NOTE]
+> These client-side keys are safe in source code — security is enforced by Firestore rules and Auth, not by hiding these values. API keys for Steam/PSN will go in `functions/.env` (gitignored).
+
+| Key | Value |
+|---|---|
+| **Admin UID** | `R4yb7LzRJfhLQ31AQF6G6px2Eg73` |
+| **Project ID** | `sonitmehrotra-portfolio` |
+| **App ID** | `1:537969629359:web:f2e136b806a709a8d31c5a` |
+| **Auth Domain** | `sonitmehrotra-portfolio.firebaseapp.com` |
+| **Storage Bucket** | `sonitmehrotra-portfolio.firebasestorage.app` |
+| **Messaging Sender ID** | `537969629359` |
+| **API Key** | `AIzaSyC9s75ux3Hn0bbg9unjPxOHTlhqscCk9yE` |
+
+```js
+// Firebase config (for src/lib/firebase.js)
+const firebaseConfig = {
+  apiKey: "AIzaSyC9s75ux3Hn0bbg9unjPxOHTlhqscCk9yE",
+  authDomain: "sonitmehrotra-portfolio.firebaseapp.com",
+  projectId: "sonitmehrotra-portfolio",
+  storageBucket: "sonitmehrotra-portfolio.firebasestorage.app",
+  messagingSenderId: "537969629359",
+  appId: "1:537969629359:web:f2e136b806a709a8d31c5a"
+};
+```
+
+---
+
 ## User Review Required
 
 > [!IMPORTANT]
