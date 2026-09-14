@@ -8,6 +8,7 @@ import MainPortfolio from "./pages/Public/MainPortfolio";
 // Admin components
 import AdminLayout from "./pages/Admin/AdminLayout";
 import Dashboard from "./pages/Admin/Dashboard/Dashboard";
+import BucketList from "./pages/Admin/BucketList/BucketList";
 import SiteSettings from "./pages/Admin/Settings/SiteSettings";
 import PlaceholderPage from "./pages/Admin/PlaceholderPage";
 
@@ -32,17 +33,7 @@ function App() {
             }
           >
             <Route index element={<Dashboard />} />
-            <Route 
-              path="bucket-list" 
-              element={
-                <PlaceholderPage 
-                  title="Bucket List Manager" 
-                  icon="🗺️" 
-                  phase="Phase 3 Upcoming" 
-                  description="Dynamic category tabs, difficulty & XP assignment, confetti celebration completion flow, direct image URL previews, and public publishing toggle." 
-                />
-              } 
-            />
+            <Route path="bucket-list" element={<BucketList />} />
             <Route 
               path="gaming" 
               element={

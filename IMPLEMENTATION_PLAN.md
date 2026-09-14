@@ -924,15 +924,19 @@ sonit-portfolio/
 - [x] Local dev preview mode button on login for instant UI checkout
 - [x] Vite dev server running at `http://localhost:5173/`
 
-### Phase 3 — Bucket List & Gamified Completion Experience
-- `BucketList` page with **dynamic tabs** (reads from `config/categories.bucketList`)
-- Full CRUD for each category with difficulty and XP assignment (Casual 50 XP, Moderate 100 XP, Challenging 250 XP, Epic 500 XP)
-- **Interactive completion experience:**
-  - Checkbox click triggers celebratory confetti (`canvas-confetti`) and floating XP indicator
-  - Awards XP, recalculates levels, evaluates badge conditions, logs activity
-  - Unchecking/deletion cleanly rolls back XP and updates category counts
-- **Image URL input with live preview** (external URLs supported; direct storage upload deferred)
-- "Publish to Public" toggle per item (copies to `publicShowcase` collection)
+### Phase 3 — Bucket List & Gamified Completion Experience [COMPLETED ✅]
+- [x] `BucketList` page with **dynamic tabs** (reads from `config/categories.bucketList`)
+- [x] Full CRUD with difficulty tiers & XP assignment (Casual 50 XP, Moderate 100 XP, Challenging 250 XP, Epic 500 XP + custom XP override)
+- [x] **Interactive gamified completion experience:**
+  - [x] Checkbox click triggers celebratory confetti (`canvas-confetti`) and floating XP notification
+  - [x] Awards XP, recalculates levels, evaluates badge conditions, logs activity
+  - [x] Level-Up modal trigger when crossing level thresholds
+  - [x] Unchecking cleanly rolls back XP and updates category counts
+  - [x] Delete confirmation modal with automatic XP subtraction if deleted item was completed
+- [x] **Direct image URL input with instant live preview**
+- [x] "Publish to Public" toggle per item (syncs to `publicShowcase` collection for public pages)
+- [x] Filter by status (All, In Progress, Accomplished) and sort by Priority, XP, Creation Date, Target Date
+- [x] Visual styling aligned with public portfolio theme (charcoal, yellow accents, white buttons, Outfit font)
 
 ### Phase 4 — Credit Card Collection
 - `CreditCardTracker` page: Card gallery with CRUD
