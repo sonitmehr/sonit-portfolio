@@ -1,6 +1,6 @@
 # Personal Tracker & Backend for Sonit Portfolio
 
-Add a Firebase-backed personal tracker with admin authentication, gaming progress integration (PlayStation & Steam), bucket list / life goals tracking, career growth tracker, and configurable public website sections — all with DDoS/billing protections.
+Add a Firebase-backed personal tracker with admin authentication, gaming progress integration (PlayStation & Steam), bucket list / life goals tracking, career growth tracker, credit card collection, and dedicated public topic pages (`/travel`, `/gaming`, `/career`, `/credit-cards`, etc.) — all admin-curated with DDoS/billing protections.
 
 ---
 
@@ -14,7 +14,9 @@ Add a Firebase-backed personal tracker with admin authentication, gaming progres
 | Bucket list gamification | **ACTIVE** — Gamified tracking: XP per item, Levels & Ranks, Badges/Achievements, Streaks, Confetti/Celebration animations, and an interactive Gamified Progress Dashboard |
 | Admin overview dashboard | **Gamified Progress Dashboard** — Hero Level card, XP progress bar, Category completion rings, Active Quests log, Badges showcase, and Activity timeline |
 | Firebase Storage | **PENDING / DEFERRED** — Storage setup deferred until Blaze upgrade. Support direct image URLs with instant preview in the meantime; direct upload architecture preserved for post-MVP upgrade |
-| Public visibility | Private by default. Admin can selectively publish items to a new **"Get to Know Me Better"** public section |
+| Public visibility | Private by default. Admin publishes items to **dedicated public route pages** (`/travel`, `/gaming`, `/career`, `/credit-cards`, etc.) — each route shows only approved content |
+| Public route architecture | **Dedicated pages per topic** — `/travel`, `/gaming`, `/career`, `/credit-cards`, etc. Each renders from `publicPages/{slug}` Firestore collection. Admin controls what appears on each page |
+| Credit card collection | **NEW** — Track credit cards owned/applied for, with card design images, benefits, rewards, and "wallet showcase" |
 | Admin entry point | Secret — hidden gesture or URL, accessible on mobile |
 | Gaming sync | Monthly scheduled Cloud Function cron |
 | Primary admin device | **Mobile phone** — admin UI must be mobile-first |
@@ -85,15 +87,21 @@ const firebaseConfig = {
 flowchart TD
   subgraph Frontend ["Frontend (React + Vite)"]
     subgraph Public ["Public Site"]
-      P1["Intro / Skills / Portfolio / Work Exp / Contact"]
-      P2["Get to Know Me Better (Curated Showcase)"]
+      P0["/ — Main Portfolio (Intro / Skills / Portfolio / Work Exp / Contact)"]
+      P1["/travel — Places Visited & Travel Wishlist"]
+      P2["/gaming — Gaming Progress & Backlog"]
+      P3["/career — Career Growth & Milestones"]
+      P4["/credit-cards — Card Collection Showcase"]
+      PX["/[custom-slug] — Dynamic Future Pages"]
     end
     subgraph Admin ["Secret Admin Dashboard (Mobile-First)"]
-      A1["🎮 Gamified Dashboard (Level, XP, Category Rings, Quests)"]
-      A2["📋 Bucket List Manager (Dynamic Categories + Gamification)"]
-      A3["🕹️ Gaming Tracker (Steam + PSN Sync)"]
-      A4["🚀 Career Growth Tracker (Roadmap & Goals)"]
-      A5["⚙️ Settings & Dynamic Categories Config"]
+      A1["Gamified Dashboard (Level, XP, Rings, Quests, Badges)"]
+      A2["Bucket List Manager (Dynamic Categories + Gamification)"]
+      A3["Gaming Tracker (Steam + PSN Sync)"]
+      A4["Career Growth Tracker"]
+      A5["Credit Card Collection Manager"]
+      A6["Public Page Builder (per-route content curation)"]
+      A7["Settings & Dynamic Categories Config"]
     end
   end
 
@@ -101,7 +109,7 @@ flowchart TD
     Auth["Firebase Auth (Admin Email/Password)"]
     AppCheck["App Check (DDoS / Bot Protection)"]
     Firestore[("Cloud Firestore")]
-    Functions["Cloud Functions (Monthly Steam/PSN Cron & Contact)"]
+    Functions["Cloud Functions (Steam/PSN Cron & Contact)"]
     Storage["Firebase Storage [PENDING STAGE]"]
   end
 
@@ -111,8 +119,8 @@ flowchart TD
   end
 
   Admin -->|Full CRUD| Firestore
-  Public -->|Public Read-Only| Firestore
-  Admin -->|Auth & Token| Auth
+  Public -->|Read Approved Items| Firestore
+  Admin -->|Auth| Auth
   Functions -->|Monthly Sync| Steam
   Functions -->|Monthly Sync| PSN
   Functions -->|Upsert Data| Firestore
@@ -270,6 +278,7 @@ Admin dashboard layout:
     - ⚡ *High Achiever:* Complete 3 High or Epic priority goals
     - 💎 *Century Club:* Cross 1,000 total XP
     - 🔥 *Streak Master:* Keep a 3-month completion streak
+    - 💳 *Wallet Warrior:* Collect 5 credit cards
   - Glowing colored badges for unlocked achievements; sleek silhouettes with progress tips for locked ones
 - **Recent Activity Timeline:**
   - Feed of recently completed items with timestamp, XP earned (+250 XP 🌟), and celebratory tags
@@ -334,28 +343,76 @@ Career growth tracker — **NEW section**:
 
 ---
 
+#### [NEW] `src/pages/Admin/CreditCards/CreditCardTracker.jsx` + `CreditCardTracker.css`
+Credit card collection manager — **NEW section**:
+- **Card Gallery View:** Visual card grid with card art/design images
+  - Tap to expand: card name, issuer, network (Visa/Mastercard/Amex/RuPay), card type (rewards/travel/cashback/premium), annual fee, credit limit, key benefits, joining date
+- **Status Tracking:** Applied → Approved → Active → Closed
+- **Rewards & Benefits Log:** Track reward points balance, cashback earned, lounge access, milestone benefits
+- **Notes:** Personal notes per card (e.g., "Use for international transactions", "Fee waiver call date")
+- **"Publish to Public" toggle** → publishes to `/credit-cards` public page via `publicPages/credit-cards`
+- **Gamification:** Cards count towards XP (Casual/Moderate/Challenging/Epic difficulty based on card tier)
+- Mobile-first: swipeable card stack or grid layout
+
+---
+
+#### [NEW] `src/pages/Admin/PublicPages/PublicPageBuilder.jsx` + `PublicPageBuilder.css`
+Per-route public page content curation — **NEW section**:
+- **Route Management:** View all available public routes (`/travel`, `/gaming`, `/career`, `/credit-cards`, custom slugs)
+- **Per-Route Controls:**
+  - Enable/disable the route entirely
+  - Set page title, description, hero image URL, and SEO meta
+  - Curate which published items appear on that page (reorder, feature/unfeature)
+- **Custom Routes:** Add new public routes for future categories (e.g., `/books`, `/fitness`) without code changes
+- Saves to `publicPages/{slug}` Firestore documents
+
+---
+
 #### [NEW] `src/pages/Admin/Settings/SiteSettings.jsx` + `SiteSettings.css`
 Site configuration page:
-- **Section toggles:** Enable/disable each public section (Intro, Skills, Portfolio, Work Experience, Contact, "Get to Know Me Better")
-- **Manage Published Items:** Review what's currently published to the "Get to Know Me Better" section, unpublish items
+- **Main page section toggles:** Enable/disable each section on the main portfolio page (Intro, Skills, Portfolio, Work Experience, Contact)
+- **Public Routes Overview:** Quick status view of all topic routes with enable/disable toggles
+- **Dynamic category management** (add/rename/remove/reorder categories for bucket list and career tracker)
 - Saves to `config/site` Firestore document
 
 ---
 
-### 5. Frontend — Public Site Updates
+### 5. Frontend — Public Topic Pages (Route-Based Architecture)
 
-#### [NEW] `src/components/Showcase/Showcase.jsx` + `Showcase.css`
-New public section: **"Get to Know Me Better"**
-- Renders items from the `publicShowcase` Firestore collection
-- Grouped by source type: places visited, games completed, career wins, personal growth achievements
-- Card-based layout with icons per category
-- Only renders if the section is enabled in `config/site` AND has published items
-- Placed between Contact and Footer in the page flow
+The public site shifts from a single-page showcase to **dedicated route pages per topic**.
+Each route is a full standalone page that renders only admin-approved content for that topic.
+
+#### Routing Structure
+
+| Route | Page | Data Source |
+|---|---|---|
+| `/` | Main portfolio (existing) | Static + `config/site` |
+| `/travel` | Places visited & travel wishlist | `publicPages/travel` + linked `publicShowcase` items |
+| `/gaming` | Gaming progress & backlog | `publicPages/gaming` + linked items |
+| `/career` | Career growth & milestones | `publicPages/career` + linked items |
+| `/credit-cards` | Credit card collection showcase | `publicPages/credit-cards` + linked items |
+| `/[custom-slug]` | Dynamic future pages | `publicPages/{slug}` + linked items |
+
+#### [NEW] `src/pages/Public/TopicPage/TopicPage.jsx` + `TopicPage.css`
+Generic, reusable public topic page component:
+- Reads route param (e.g., `travel`) and fetches `publicPages/{slug}` for page config (title, description, hero image, SEO)
+- Fetches linked `publicShowcase` items filtered by `routeSlug`
+- Renders: hero header with title/description/image, card grid of published items grouped by admin-defined order
+- 404 fallback if route is disabled or doesn't exist
+- SEO: dynamic `<title>`, `<meta description>`, Open Graph tags per page
+- Fully responsive — beautiful on mobile and desktop
+
+#### [NEW] `src/pages/Public/TopicPage/CreditCardShowcase.jsx` + `CreditCardShowcase.css`
+Specialized sub-component for the `/credit-cards` route:
+- Visual card gallery with card images displayed in a wallet-style fan or grid
+- Hover/tap to reveal card details: issuer, network, benefits, joining date
+- Optional "total cards" counter badge
 
 #### [MODIFY] [App.jsx](file:///c:/Users/AWCC/Desktop/Learning/sonit-portfolio/src/App.jsx)
-- Fetch `config/site` on load to determine which sections to render
+- Add `react-router-dom` routes: `/` (main portfolio), `/travel`, `/gaming`, `/career`, `/credit-cards`, `/:slug` (dynamic)
+- Fetch `config/site` on load to determine which sections to render on main page
+- Main page gets a "Explore More" section linking to enabled topic pages
 - Conditionally render existing sections (Intro, Skills, Portfolio, Work Exp, Contact) based on config
-- Add `<Showcase />` component if enabled
 
 #### [MODIFY] [Contact.jsx](file:///c:/Users/AWCC/Desktop/Learning/sonit-portfolio/src/components/Contact/Contact.jsx)
 - Replace direct EmailJS call with Cloud Function `submitContactMessage`
@@ -413,6 +470,17 @@ service cloud.firestore {
     // Career goals — admin only (private)
     match /careerGoals/{item} {
       allow read, write: if isAdmin();
+    }
+
+    // Credit cards — admin only (private)
+    match /creditCards/{item} {
+      allow read, write: if isAdmin();
+    }
+
+    // Public page configs — public read, admin write
+    match /publicPages/{slug} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // Public showcase — public read, admin write
@@ -490,7 +558,13 @@ service firebase.storage {
     "portfolio": { "enabled": true },
     "workExperience": { "enabled": true },
     "contact": { "enabled": true },
-    "showcase": { "enabled": true }
+    "exploreMore": { "enabled": true }
+  },
+  "publicRoutes": {
+    "travel": { "enabled": true, "label": "Travel", "icon": "\u2708\ufe0f", "order": 1 },
+    "gaming": { "enabled": true, "label": "Gaming", "icon": "\ud83c\udfae", "order": 2 },
+    "career": { "enabled": true, "label": "Career", "icon": "\ud83d\ude80", "order": 3 },
+    "credit-cards": { "enabled": true, "label": "Credit Cards", "icon": "\ud83d\udcb3", "order": 4 }
   },
   "updatedAt": "<timestamp>"
 }
@@ -505,7 +579,8 @@ Categories are **not hardcoded** — they live in Firestore so you can add/renam
   "bucketList": [
     { "id": "places", "label": "Places to Visit", "icon": "🗺️", "color": "#4ECDC4", "enabled": true },
     { "id": "gaming", "label": "Gaming Backlog", "icon": "🎮", "color": "#FF6B6B", "enabled": true },
-    { "id": "personal_growth", "label": "Personal Growth", "icon": "🌱", "color": "#95E1D3", "enabled": true }
+    { "id": "personal_growth", "label": "Personal Growth", "icon": "🌱", "color": "#95E1D3", "enabled": true },
+    { "id": "credit_cards", "label": "Credit Card Collection", "icon": "💳", "color": "#FFD93D", "enabled": true }
   ],
   "career": [
     { "id": "frontend", "label": "Frontend", "icon": "🖥️", "color": "#6C5CE7" },
@@ -534,7 +609,8 @@ Categories are **not hardcoded** — they live in Firestore so you can add/renam
   "categoryBreakdown": {
     "places": { "completed": 3, "total": 8 },
     "gaming": { "completed": 2, "total": 6 },
-    "personal_growth": { "completed": 2, "total": 5 }
+    "personal_growth": { "completed": 2, "total": 5 },
+    "credit_cards": { "completed": 1, "total": 4 }
   },
   "recentActivity": [
     { "id": "act_1", "itemId": "abc123", "title": "Visit Kyoto", "xpGained": 250, "date": "<timestamp>" }
@@ -635,23 +711,74 @@ Categories are **not hardcoded** — they live in Firestore so you can add/renam
 > `status` values: `"not_started"` | `"learning"` | `"proficient"` | `"completed"`
 > `category` values: dynamic — read from `config/categories.career[].id`
 
+#### `creditCards/{id}` — **NEW**
+
+```json
+{
+  "cardName": "HDFC Regalia Gold",
+  "issuer": "HDFC Bank",
+  "network": "visa",
+  "cardType": "premium",
+  "annualFee": 2500,
+  "creditLimit": 300000,
+  "joiningDate": "<timestamp>",
+  "status": "active",
+  "benefits": ["Lounge access", "2X rewards on dining", "Fuel surcharge waiver"],
+  "rewardPoints": 15420,
+  "cashbackEarned": 3200,
+  "cardImageUrl": "https://images.example.com/regalia-gold.png or null",
+  "difficulty": "moderate",
+  "xpValue": 100,
+  "isPublic": false,
+  "notes": "Fee waiver if spend > 3L/year",
+  "createdAt": "<timestamp>",
+  "updatedAt": "<timestamp>"
+}
+```
+> `network` values: `"visa"` | `"mastercard"` | `"amex"` | `"rupay"` | `"diners"`
+> `cardType` values: `"rewards"` | `"travel"` | `"cashback"` | `"premium"` | `"secured"` | `"business"`
+> `status` values: `"applied"` | `"approved"` | `"active"` | `"closed"`
+
+#### `publicPages/{slug}` — **NEW (Route-Based Public Pages)**
+
+```json
+{
+  "slug": "travel",
+  "title": "My Travel Adventures",
+  "description": "Places I've visited and destinations on my bucket list",
+  "heroImageUrl": "https://images.unsplash.com/... or null",
+  "seoTitle": "Sonit's Travel Adventures",
+  "seoDescription": "Explore the places Sonit has visited around the world",
+  "enabled": true,
+  "itemOrder": ["publicShowcase/item1", "publicShowcase/item2"],
+  "createdAt": "<timestamp>",
+  "updatedAt": "<timestamp>"
+}
+```
+> Each public route (`/travel`, `/gaming`, `/career`, `/credit-cards`) has a corresponding document.
+> `itemOrder`: ordered list of `publicShowcase` document IDs to display on this page.
+> Custom slugs can be created from admin for future topics without code changes.
+
 #### `publicShowcase/{id}`
 
 ```json
 {
-  "title": "Visited Japan 🇯🇵",
+  "title": "Visited Japan",
   "description": "Cherry blossom season in Kyoto, 2025",
   "sourceType": "places",
   "sourceId": "bucketList/abc123",
+  "routeSlug": "travel",
   "icon": "🗺️",
-  "imageUrl": "https://firebasestorage.googleapis.com/... or null",
+  "imageUrl": "https://images.unsplash.com/... or null",
+  "featured": false,
   "completedAt": "<timestamp>",
   "createdAt": "<timestamp>"
 }
 ```
-> `sourceType` values: dynamic — matches any category `id` from `config/categories`, plus `"career"`
-> `imageUrl`: copied from the source item's imageUrl when published
-> This collection is populated when admin toggles `isPublic: true` on any item or explicitly publishes to showcase.
+> `sourceType` values: dynamic — matches any category `id` from `config/categories`, plus `"career"` and `"credit_cards"`
+> `routeSlug`: determines which public topic page (`/travel`, `/gaming`, etc.) this item appears on
+> `featured`: if true, displayed prominently at the top of the page
+> This collection is populated when admin toggles `isPublic: true` on any item.
 
 #### `contactMessages/{id}`
 
@@ -709,9 +836,9 @@ sonit-portfolio/
 │   │   ├── ProtectedRoute/
 │   │   │   └── ProtectedRoute.jsx        [NEW]
 │   │   ├── ImageUpload/                  [PENDING STAGE — direct file upload deferred]
-│   │   ├── Showcase/
-│   │   │   ├── Showcase.jsx              [NEW]
-│   │   │   └── Showcase.css              [NEW]
+│   │   ├── ExploreMore/
+│   │   │   ├── ExploreMore.jsx           [NEW — links to topic pages on main site]
+│   │   │   └── ExploreMore.css           [NEW]
 │   │   ├── Navbar/                       [EXISTS — MODIFY for secret gesture]
 │   │   ├── Intro/                        [EXISTS]
 │   │   ├── Skills/                       [EXISTS]
@@ -722,6 +849,12 @@ sonit-portfolio/
 │   │   ├── Login/
 │   │   │   ├── Login.jsx                 [NEW]
 │   │   │   └── Login.css                 [NEW]
+│   │   ├── Public/
+│   │   │   └── TopicPage/
+│   │   │       ├── TopicPage.jsx         [NEW — generic public topic page]
+│   │   │       ├── TopicPage.css         [NEW]
+│   │   │       ├── CreditCardShowcase.jsx [NEW — wallet-style card display]
+│   │   │       └── CreditCardShowcase.css [NEW]
 │   │   └── Admin/
 │   │       ├── AdminLayout.jsx           [NEW — bottom nav on mobile, sidebar on desktop]
 │   │       ├── AdminLayout.css           [NEW]
@@ -737,8 +870,14 @@ sonit-portfolio/
 │   │       ├── Career/
 │   │       │   ├── CareerTracker.jsx     [NEW]
 │   │       │   └── CareerTracker.css     [NEW]
+│   │       ├── CreditCards/
+│   │       │   ├── CreditCardTracker.jsx [NEW — card collection CRUD + gallery]
+│   │       │   └── CreditCardTracker.css [NEW]
+│   │       ├── PublicPages/
+│   │       │   ├── PublicPageBuilder.jsx  [NEW — per-route content curation]
+│   │       │   └── PublicPageBuilder.css  [NEW]
 │   │       └── Settings/
-│   │           ├── SiteSettings.jsx      [NEW — section toggles & dynamic categories]
+│   │           ├── SiteSettings.jsx      [NEW — section toggles, route toggles, categories]
 │   │           └── SiteSettings.css      [NEW]
 │   ├── App.jsx                           [MODIFY]
 │   ├── App.css                           [EXISTS]
@@ -763,7 +902,7 @@ sonit-portfolio/
 - Create admin account in Firebase Console
 
 ### Phase 2 — Admin Dashboard Shell & Gamification Engine
-- `AdminLayout` with mobile bottom-tab nav + desktop sidebar
+- `AdminLayout` with mobile bottom-tab nav + desktop sidebar (Dashboard, Bucket List, Gaming, Career, Credit Cards, Public Pages, Settings)
 - `src/lib/gamification.js` — XP, levels, badges, streaks, and activity logging engine
 - `Dashboard` page — **Gamified Progress Dashboard**:
   - Hero Level Card (Level, XP progress bar, active streak)
@@ -785,26 +924,37 @@ sonit-portfolio/
 - **Image URL input with live preview** (external URLs supported; direct storage upload deferred)
 - "Publish to Public" toggle per item (copies to `publicShowcase` collection)
 
-### Phase 4 — Career Growth Tracker
+### Phase 4 — Credit Card Collection
+- `CreditCardTracker` page: Card gallery with CRUD
+- Card art/design image URL support with live preview
+- Status tracking (Applied → Approved → Active → Closed)
+- Benefits & rewards logging
+- XP integration (card difficulty tiers)
+- "Publish to Public" toggle → publishes to `/credit-cards` public page
+
+### Phase 5 — Career Growth Tracker
 - `CareerTracker` page: Skills Roadmap, Learning Goals, Career Milestones
 - CRUD + milestone tracking
 - "Publish to Public" toggle
 
-### Phase 5 — Gaming Integration
+### Phase 6 — Gaming Integration
 - `functions/` directory setup
 - `steam.js` + `psn.js` API modules
 - Monthly scheduled Cloud Functions for auto-sync
 - On-demand sync button in admin
 - `GamingTracker` UI with progress visualization
 
-### Phase 6 — Public Showcase & Contact Migration
-- `Showcase` component on public site ("Get to Know Me Better")
+### Phase 7 — Public Topic Pages & Contact Migration
+- `TopicPage` generic route component for `/travel`, `/gaming`, `/career`, `/credit-cards`
+- `CreditCardShowcase` specialized component for wallet-style card display
+- `PublicPageBuilder` admin page for per-route content curation
+- "Explore More" section on main portfolio linking to enabled topic pages
 - Migrate contact form from EmailJS → Cloud Function
 - Remove exposed EmailJS keys from client
 
-### Phase 7 — Security & Polish
+### Phase 8 — Security & Polish
 - Firebase App Check setup
-- Firestore rules deployment and testing (including `/userStats/{doc}`)
+- Firestore rules deployment and testing (including `/userStats/{doc}`, `/creditCards/{item}`, `/publicPages/{slug}`)
 - Rate limiting on contact form
 - Client-side caching (`localStorage` + TTL)
 - Budget alert setup in Google Cloud Console
@@ -834,7 +984,11 @@ sonit-portfolio/
 - **Dynamic Categories:** Add a new category in Settings, verify a new tab immediately appears in Bucket List
 - **Direct Image URLs:** Paste an image URL (e.g., Unsplash), verify instant preview renders cleanly on both admin and public showcase
 - **Career Tracker:** Add skills, learning goals, milestones — verify data persistence
-- **Publish to Public:** Toggle items public, verify they appear in "Get to Know Me Better"
+- **Credit Card Collection:** Add/edit/delete cards, verify card gallery view, benefits tracking, XP integration
+- **Public Topic Pages:** Visit `/travel`, `/gaming`, `/career`, `/credit-cards` — verify only admin-approved items appear
+- **Public Page Builder:** Enable/disable a route, change page title/hero, reorder items — verify changes reflect on the public page
+- **Dynamic Route Creation:** Add a new custom route in admin, verify it becomes accessible at `/[slug]`
+- **Publish to Public:** Toggle items public with a route assignment, verify they appear on the correct topic page
 - **Gaming Sync:** Trigger manual sync, verify Steam + PSN data populates
 - **Site Config:** Toggle sections off, verify public site hides them
 - **Contact Form:** Submit from public site, verify message stored in Firestore (not via EmailJS)
