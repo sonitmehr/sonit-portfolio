@@ -9,7 +9,7 @@ const Login = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { login, enableDemoMode } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -94,6 +94,34 @@ const Login = () => {
           >
             {loading ? <div className="login-spinner" /> : "Sign In"}
           </button>
+
+          {import.meta.env.DEV && (
+            <button
+              type="button"
+              onClick={() => {
+                enableDemoMode();
+                navigate("/admin");
+              }}
+              style={{
+                marginTop: "12px",
+                width: "100%",
+                padding: "12px",
+                background: "rgba(255, 255, 255, 0.06)",
+                border: "1px dashed rgba(255, 255, 255, 0.2)",
+                borderRadius: "12px",
+                color: "rgba(255, 255, 255, 0.8)",
+                fontSize: "13px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px"
+              }}
+            >
+              <span>⚡</span>
+              <span>Preview Admin UI (Local Dev Mode)</span>
+            </button>
+          )}
         </form>
 
         <div className="login-back-link">

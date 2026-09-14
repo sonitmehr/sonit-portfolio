@@ -48,8 +48,18 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    await signOut(auth);
+    try {
+      await signOut(auth);
+    } catch (e) {
+      // ignore
+    }
+    setUser(null);
     setIsAdmin(false);
+  };
+
+  const enableDemoMode = () => {
+    setUser({ uid: "demo-admin", email: "sonit.admin@demo.local" });
+    setIsAdmin(true);
   };
 
   const value = {
@@ -57,7 +67,8 @@ export const AuthProvider = ({ children }) => {
     loading,
     isAdmin,
     login,
-    logout
+    logout,
+    enableDemoMode
   };
 
   return (
