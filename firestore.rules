@@ -1,0 +1,82 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null && 
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Admins registry — authenticated user can read their own admin status; writes restricted to console/admin SDK
+    match /admins/{adminId} {
+      allow read: if request.auth != null && request.auth.uid == adminId;
+      allow write: if false;
+    }
+
+    // Site config & categories — public read, admin write
+    match /config/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // User stats & gamification — admin only (private)
+    match /userStats/{doc} {
+      allow read, write: if isAdmin();
+    }
+
+    // Bucket list — admin only (private)
+    match /bucketList/{item} {
+      allow read, write: if isAdmin();
+    }
+
+    // Gaming progress — admin only (private)
+    match /gamingProgress/{item} {
+      allow read, write: if isAdmin();
+    }
+
+    // Career goals — admin only (private)
+    match /careerGoals/{item} {
+      allow read, write: if isAdmin();
+    }
+
+    // Credit cards — admin only (private)
+    match /creditCards/{item} {
+      allow read, write: if isAdmin();
+    }
+
+    // Public page configs — public read, admin write
+    match /publicPages/{slug} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Public showcase — public read, admin write
+    match /publicShowcase/{item} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Contact messages — public create (validated), admin read/delete
+    match /contactMessages/{msg} {
+      allow create: if request.resource.data.keys()
+                      .hasAll(['name', 'email', 'message', 'createdAt'])
+                    && request.resource.data.name is string
+                    && request.resource.data.email is string
+                    && request.resource.data.message is string
+                    && request.resource.data.name.size() <= 100
+                    && request.resource.data.email.size() <= 100
+                    && request.resource.data.message.size() <= 2000;
+      allow read, delete: if isAdmin();
+    }
+
+    // Rate limit tracking — Cloud Functions only
+    match /rateLimits/{entry} {
+      allow read, write: if false;
+    }
+
+    // Deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

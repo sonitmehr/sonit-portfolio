@@ -1,24 +1,53 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import "./Navbar.css";
 import assets from "../../assets/assets";
 import { Link } from "react-scroll";
+import { useNavigate } from "react-router-dom";
 
 function Navbar() {
   const [showMenu, setShowMenu] = useState(false);
+  const navigate = useNavigate();
+  const timerRef = useRef(null);
+
+  const handlePressStart = () => {
+    timerRef.current = setTimeout(() => {
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+      navigate("/admin");
+    }, 3000);
+  };
+
+  const handlePressEnd = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
   return (
     <nav className="navbar">
-      <Link
-    activeClass="none"
-        to="intro"
-        spy={true}
-        smooth={true}
-        offset={-100}
-        duration={500}
-        // className="desktop-menu-item"
+      <div
+        className="logo-wrapper"
+        onTouchStart={handlePressStart}
+        onTouchEnd={handlePressEnd}
+        onTouchCancel={handlePressEnd}
+        onMouseDown={handlePressStart}
+        onMouseUp={handlePressEnd}
+        onMouseLeave={handlePressEnd}
+        style={{ cursor: "pointer", userSelect: "none" }}
       >
-        {/* <img src={assets.logo} alt="nope" className="logo" /> */}
-        <span className="logo">Sonit</span>
-      </Link>
+        <Link
+          activeClass="none"
+          to="intro"
+          spy={true}
+          smooth={true}
+          offset={-100}
+          duration={500}
+        >
+          <span className="logo">Sonit</span>
+        </Link>
+      </div>
       <div className="desktop-menu">
         <Link
           activeClass="active"

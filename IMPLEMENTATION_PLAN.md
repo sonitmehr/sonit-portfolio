@@ -443,7 +443,14 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function isAdmin() {
-      return request.auth != null && request.auth.uid == 'R4yb7LzRJfhLQ31AQF6G6px2Eg73';
+      return request.auth != null && 
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Admins registry — authenticated user can read their own admin status; writes restricted to console/admin SDK
+    match /admins/{adminId} {
+      allow read: if request.auth != null && request.auth.uid == adminId;
+      allow write: if false;
     }
 
     // Site config & categories — public read, admin write
@@ -892,14 +899,16 @@ sonit-portfolio/
 
 ## Implementation Phases
 
-### Phase 1 — Foundation
-- Firebase project config (`firebase.json`, `.env`, `firestore.rules`)
-- `src/lib/firebase.js` — SDK initialization
-- `react-router-dom` routing in `App.jsx`
-- `AuthContext` + `ProtectedRoute`
-- `Login` page (mobile-first)
-- Secret entry: long-press logo + `/admin` URL route
-- Create admin account in Firebase Console
+### Phase 1 — Foundation [COMPLETED ✅]
+- [x] Firebase project config (`firebase.json`, `.env`, `firestore.rules`, `firestore.indexes.json`)
+- [x] Dynamic admin authorization via `admins` collection check in `firestore.rules` (zero hardcoded UIDs in public git)
+- [x] `src/lib/firebase.js` — SDK initialization (Auth, Firestore)
+- [x] `react-router-dom` client-side routing in `App.jsx` (`/`, `/login`, `/admin/*`)
+- [x] `AuthContext` + `ProtectedRoute` (admin verification via `admins` collection and gitignored `.env`)
+- [x] `Login` page (mobile-first sleek glassmorphism design with error handling)
+- [x] Secret entry: 3-second long-press on logo in `Navbar` + `/admin` direct route
+- [x] Cleaned up `index.html` inline script
+- [x] Production build verified cleanly with `vite build`
 
 ### Phase 2 — Admin Dashboard Shell & Gamification Engine
 - `AdminLayout` with mobile bottom-tab nav + desktop sidebar (Dashboard, Bucket List, Gaming, Career, Credit Cards, Public Pages, Settings)
