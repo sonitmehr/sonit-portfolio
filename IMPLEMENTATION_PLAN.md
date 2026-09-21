@@ -961,12 +961,21 @@ sonit-portfolio/
 - [x] Dynamic career categories from `config/categories.career` with local fallback
 - [x] Summary stats: Skills Mastered, Goals Completed, Milestones, XP from Career
 
-### Phase 6 — Gaming Integration
-- `functions/` directory setup
-- `steam.js` + `psn.js` API modules
-- Monthly scheduled Cloud Functions for auto-sync
-- On-demand sync button in admin
-- `GamingTracker` UI with progress visualization
+### Phase 6 — Gaming Backlog & Progress Tracker [COMPLETED ✅]
+- [x] `GamingTracker` page: Gaming progress & backlog manager
+- [x] Full CRUD via unified modal with live cover art preview & trophy breakdown
+- [x] Platform badges with color coding (Steam, PlayStation, Switch, Xbox, PC, Other)
+- [x] Status management (Playing, Completed, Backlog, Shelved) with quick-status toggling
+- [x] Trophies breakdown (Platinum, Gold, Silver, Bronze) + achievement progress bar
+- [x] XP integration with difficulty tiers (Casual 50, Moderate 100, Challenging 250, Epic 500 + custom XP)
+- [x] One-click completion flow: celebratory confetti (`canvas-confetti`), floating XP toast, level-up detection modal
+- [x] XP rollback on uncompleting or deleting completed titles
+- [x] "Publish to Public" toggle per game (ready for Phase 7 topic page)
+- [x] Summary stat cards: Total Titles, Currently Playing, Conquered (%), Total Playtime, Backlog Slayer progress
+- [x] Filter tabs by status, platform dropdown, search by title/genre/notes, and multi-criteria sorting
+- [x] Manual entry mode notice banner with reference to future Cloud Functions sync
+- [x] Seed sample backlog button for instant demo evaluation
+- [x] Production build verified cleanly (`vite build` passed in 4.75s)
 
 ### Phase 7 — Public Topic Pages & Contact Migration
 - `TopicPage` generic route component for `/travel`, `/gaming`, `/career`, `/credit-cards`
@@ -985,9 +994,14 @@ sonit-portfolio/
 - Clean up `index.html` inline Firebase script
 
 ### [PENDING STAGE — Post-MVP / Upon Blaze Upgrade]
-- Enable Firebase Storage in Console
-- Deploy `storage.rules`
-- Implement `ImageUpload` drag-and-drop / camera upload component
+- **Firebase Storage Direct Uploads:**
+  - Enable Firebase Storage in Console & deploy `storage.rules`
+  - Implement `ImageUpload` drag-and-drop / camera upload component
+- **Cloud Functions for Gaming Automated Sync (Steam & PSN):**
+  - Scheduled Monthly Cron function (`syncSteamGames`): queries Steam Web API for owned games, playtime, and achievements, upserting directly to `gamingProgress/{steamAppId}`
+  - Scheduled Monthly Cron function (`syncPSNGames`): authenticates via refreshed NPSSO token, queries PSN titles and trophy milestones, upserting directly to `gamingProgress/{psnTitleId}`
+  - On-Demand Admin HTTPS Callable (`triggerGamingSync`): allows manual trigger of Cloud Functions sync from any device
+  - *(Note: Local development currently features active Vite Dev Proxy sync at `/api/steam/games` allowing one-click sync directly from the Admin UI)*
 
 ---
 

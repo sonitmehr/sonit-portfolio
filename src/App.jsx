@@ -13,6 +13,7 @@ import SiteSettings from "./pages/Admin/Settings/SiteSettings";
 import PlaceholderPage from "./pages/Admin/PlaceholderPage";
 import CreditCardTracker from "./pages/Admin/CreditCards/CreditCardTracker";
 import CareerTracker from "./pages/Admin/Career/CareerTracker"; 
+import GamingTracker from "./pages/Admin/Gaming/GamingTracker";
 
 function App() {
   return (
@@ -36,17 +37,7 @@ function App() {
           >
             <Route index element={<Dashboard />} />
             <Route path="bucket-list" element={<BucketList />} />
-            <Route 
-              path="gaming" 
-              element={
-                <PlaceholderPage 
-                  title="Gaming Progress Tracker" 
-                  icon="🎮" 
-                  phase="Phase 6 Upcoming" 
-                  description="Steam Web API & PlayStation PSN integration, sync status, trophy completion bars, and manual title tracking." 
-                />
-              } 
-            />
+            <Route path="gaming" element={<GamingTracker />} />
             <Route path="career" element={<CareerTracker />} />
             <Route path="credit-cards" element={<CreditCardTracker />} />
             <Route 
