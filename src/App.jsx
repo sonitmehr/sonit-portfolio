@@ -11,6 +11,7 @@ import Dashboard from "./pages/Admin/Dashboard/Dashboard";
 import BucketList from "./pages/Admin/BucketList/BucketList";
 import SiteSettings from "./pages/Admin/Settings/SiteSettings";
 import PlaceholderPage from "./pages/Admin/PlaceholderPage";
+import CreditCardTracker from "./pages/Admin/CreditCards/CreditCardTracker";
 
 function App() {
   return (
@@ -56,17 +57,7 @@ function App() {
                 />
               } 
             />
-            <Route 
-              path="credit-cards" 
-              element={
-                <PlaceholderPage 
-                  title="Credit Card Collection" 
-                  icon="💳" 
-                  phase="Phase 4 Upcoming" 
-                  description="Visual card gallery with card art images, reward points & cashback logs, perks tracker, and public showcase." 
-                />
-              } 
-            />
+            <Route path="credit-cards" element={<CreditCardTracker />} />
             <Route 
               path="public-pages" 
               element={
