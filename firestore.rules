@@ -24,24 +24,28 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
-    // Bucket list — admin only (private)
+    // Bucket list — public read if isPublic == true, admin full access
     match /bucketList/{item} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin() || resource.data.isPublic == true;
+      allow write: if isAdmin();
     }
 
-    // Gaming progress — admin only (private)
+    // Gaming progress — public read if isPublic == true, admin full access
     match /gamingProgress/{item} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin() || resource.data.isPublic == true;
+      allow write: if isAdmin();
     }
 
-    // Career goals — admin only (private)
+    // Career goals — public read if isPublic == true, admin full access
     match /careerGoals/{item} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin() || resource.data.isPublic == true;
+      allow write: if isAdmin();
     }
 
-    // Credit cards — admin only (private)
+    // Credit cards — public read if isPublic == true, admin full access
     match /creditCards/{item} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin() || resource.data.isPublic == true;
+      allow write: if isAdmin();
     }
 
     // Public page configs — public read, admin write

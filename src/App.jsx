@@ -4,13 +4,14 @@ import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import Login from "./pages/Login/Login";
 import MainPortfolio from "./pages/Public/MainPortfolio";
+import TopicPage from "./pages/Public/TopicPage/TopicPage";
 
 // Admin components
 import AdminLayout from "./pages/Admin/AdminLayout";
 import Dashboard from "./pages/Admin/Dashboard/Dashboard";
 import BucketList from "./pages/Admin/BucketList/BucketList";
 import SiteSettings from "./pages/Admin/Settings/SiteSettings";
-import PlaceholderPage from "./pages/Admin/PlaceholderPage";
+import PublicPageBuilder from "./pages/Admin/PublicPages/PublicPageBuilder";
 import CreditCardTracker from "./pages/Admin/CreditCards/CreditCardTracker";
 import CareerTracker from "./pages/Admin/Career/CareerTracker"; 
 import GamingTracker from "./pages/Admin/Gaming/GamingTracker";
@@ -26,6 +27,13 @@ function App() {
           {/* Admin Login Route */}
           <Route path="/login" element={<Login />} />
 
+          {/* Public Topic Routes */}
+          <Route path="/travel" element={<TopicPage slug="travel" />} />
+          <Route path="/gaming" element={<TopicPage slug="gaming" />} />
+          <Route path="/career" element={<TopicPage slug="career" />} />
+          <Route path="/credit-cards" element={<TopicPage slug="credit-cards" />} />
+          <Route path="/:slug" element={<TopicPage />} />
+
           {/* Protected Admin Routes */}
           <Route
             path="/admin"
@@ -40,17 +48,7 @@ function App() {
             <Route path="gaming" element={<GamingTracker />} />
             <Route path="career" element={<CareerTracker />} />
             <Route path="credit-cards" element={<CreditCardTracker />} />
-            <Route 
-              path="public-pages" 
-              element={
-                <PlaceholderPage 
-                  title="Public Page Builder" 
-                  icon="🌐" 
-                  phase="Phase 7 Upcoming" 
-                  description="Per-route public content curation for /travel, /gaming, /career, /credit-cards, and dynamic custom slugs." 
-                />
-              } 
-            />
+            <Route path="public-pages" element={<PublicPageBuilder />} />
             <Route path="settings" element={<SiteSettings />} />
           </Route>
 

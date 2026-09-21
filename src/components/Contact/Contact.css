@@ -55,11 +55,51 @@
 }
 .submit-button{
   background: white;
+  color: #111;
+  font-weight: 600;
   border: none;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
   margin: 1rem;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+.submit-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+}
+.submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.contact-alert {
+  width: 100%;
+  max-width: 40rem;
+  margin: 0.5rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: fadeInAlert 0.3s ease;
+}
+.contact-alert-success {
+  background: rgba(0, 184, 148, 0.15);
+  color: #55efc4;
+  border: 1px solid rgba(0, 184, 148, 0.3);
+}
+.contact-alert-error {
+  background: rgba(255, 118, 117, 0.15);
+  color: #ff7675;
+  border: 1px solid rgba(255, 118, 117, 0.3);
+}
+
+@keyframes fadeInAlert {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 .links{
   display: flex;
