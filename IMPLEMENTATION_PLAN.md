@@ -938,18 +938,28 @@ sonit-portfolio/
 - [x] Filter by status (All, In Progress, Accomplished) and sort by Priority, XP, Creation Date, Target Date
 - [x] Visual styling aligned with public portfolio theme (charcoal, yellow accents, white buttons, Outfit font)
 
-### Phase 4 — Credit Card Collection
-- `CreditCardTracker` page: Card gallery with CRUD
-- Card art/design image URL support with live preview
-- Status tracking (Applied → Approved → Active → Closed)
-- Benefits & rewards logging
-- XP integration (card difficulty tiers)
-- "Publish to Public" toggle → publishes to `/credit-cards` public page
+### Phase 4 — Credit Card Collection [COMPLETED ✅]
+- [x] `CreditCardTracker` page: Card gallery with CRUD
+- [x] Card art/design image URL support with live preview
+- [x] Status tracking (Applied → Approved → Active → Closed)
+- [x] Benefits & rewards logging
+- [x] XP integration (card difficulty tiers) — awards XP on new active/approved card
+- [x] "Publish to Public" toggle → publishes to `/credit-cards` public page
+- [x] Summary stats (total cards, active, reward points, cashback)
+- [x] Status filter tabs (All / Active / Approved / Applied / Closed)
+- [x] XP toast + Level-Up confetti modal
 
-### Phase 5 — Career Growth Tracker
-- `CareerTracker` page: Skills Roadmap, Learning Goals, Career Milestones
-- CRUD + milestone tracking
-- "Publish to Public" toggle
+### Phase 5 — Career Growth Tracker [COMPLETED ✅]
+- [x] `CareerTracker` page with three tabs: Skills Roadmap, Learning Goals, Career Milestones
+- [x] Full CRUD for all three types via unified modal (type-aware fields)
+- [x] Skills: proficiency 4-segment bar (Beginner/Intermediate/Advanced/Expert), category badge, status
+- [x] Learning Goals: priority, deadline (overdue detection), inline sub-task milestone checklists with live progress bar
+- [x] Milestones: vertical timeline view with type icons (Promotion/Certification/Company Switch/Achievement)
+- [x] One-click Complete → awards XP, updates `userStats/gamification`, confetti burst, level-up modal
+- [x] Resource links (label|url format) rendered as clickable chips
+- [x] "Publish to Public" toggle per item
+- [x] Dynamic career categories from `config/categories.career` with local fallback
+- [x] Summary stats: Skills Mastered, Goals Completed, Milestones, XP from Career
 
 ### Phase 6 — Gaming Integration
 - `functions/` directory setup

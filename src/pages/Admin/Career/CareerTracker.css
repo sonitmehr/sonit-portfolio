@@ -1,0 +1,430 @@
+/* CareerTracker.css — matches portfolio dark theme: rgb(30,30,30) bg, rgb(50,50,50) cards, yellow accent, Outfit font */
+
+.ct-container {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  max-width: 1100px;
+  margin: 0 auto;
+  font-family: 'Outfit', sans-serif;
+  position: relative;
+}
+
+/* ── XP Toast ─────────────────────────────────────────────────────────────── */
+.ct-xp-toast {
+  position: fixed;
+  bottom: 90px;
+  right: 24px;
+  background: rgb(50,50,50);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-left: 3px solid #4ECDC4;
+  border-radius: 10px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #fff;
+  z-index: 9999;
+  animation: slideInRight 0.35s ease;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.ct-xp-val { color: yellow; font-weight: 600; }
+
+@keyframes slideInRight {
+  from { transform: translateX(120%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+/* ── Overlay & Modals ─────────────────────────────────────────────────────── */
+.ct-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.ct-levelup-modal,
+.ct-delete-modal,
+.ct-form-modal {
+  background: rgb(40,40,40);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  animation: fadeScaleIn 0.25s ease;
+  width: 100%;
+}
+
+.ct-levelup-modal { max-width: 380px; text-align: center; }
+.ct-levelup-icon  { font-size: 52px; margin-bottom: 12px; }
+.ct-levelup-modal h2 { font-size: 24px; font-weight: 700; color: yellow; margin: 0 0 6px; }
+.ct-levelup-modal p  { font-size: 13px; color: rgba(255,255,255,0.5); margin: 0 0 12px; }
+.ct-levelup-title    { font-size: 18px; font-weight: 600; color: #fff; margin-bottom: 20px; }
+
+.ct-delete-modal { max-width: 360px; text-align: center; }
+.ct-delete-icon  { font-size: 36px; margin-bottom: 12px; }
+.ct-delete-modal h3 { font-size: 18px; font-weight: 600; color: #fff; margin: 0 0 8px; }
+.ct-delete-modal p  { font-size: 13px; color: rgba(255,255,255,0.6); margin: 0 0 20px; }
+.ct-delete-actions  { display: flex; gap: 10px; justify-content: center; }
+
+.ct-form-modal { max-width: 640px; max-height: 90vh; overflow-y: auto; }
+
+@keyframes fadeScaleIn {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+/* Modal header */
+.ct-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding-bottom: 14px;
+}
+.ct-modal-header h3 { font-size: 16px; font-weight: 600; color: #fff; margin: 0; }
+.ct-modal-close {
+  background: none; border: none; color: rgba(255,255,255,0.5);
+  font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 6px;
+  transition: color 0.2s;
+}
+.ct-modal-close:hover { color: #fff; }
+
+/* ── Form ─────────────────────────────────────────────────────────────────── */
+.ct-form { display: flex; flex-direction: column; gap: 14px; }
+
+.ct-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.ct-field { display: flex; flex-direction: column; gap: 5px; }
+.ct-field-full { grid-column: 1 / -1; }
+
+.ct-field label {
+  font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.55);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.ct-label-hint { font-size: 10px; color: rgba(255,255,255,0.3); text-transform: none; letter-spacing: 0; font-weight: 400; }
+
+.ct-field input,
+.ct-field select,
+.ct-field textarea {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.ct-field input:focus,
+.ct-field select:focus,
+.ct-field textarea:focus { border-color: rgba(255,255,255,0.3); }
+.ct-field select option { background: rgb(40,40,40); }
+.ct-field textarea { resize: vertical; }
+
+/* Toggle */
+.ct-toggle-label { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.ct-toggle-label input[type="checkbox"] { display: none; }
+.ct-toggle-track {
+  width: 40px; height: 22px; background: rgba(255,255,255,0.1);
+  border-radius: 99px; position: relative; transition: background 0.2s; flex-shrink: 0;
+}
+.ct-toggle-track::after {
+  content: ''; position: absolute; width: 16px; height: 16px;
+  background: rgba(255,255,255,0.5); border-radius: 50%;
+  top: 3px; left: 3px; transition: transform 0.2s, background 0.2s;
+}
+.ct-toggle-label input:checked + .ct-toggle-track { background: yellow; }
+.ct-toggle-label input:checked + .ct-toggle-track::after { transform: translateX(18px); background: #000; }
+.ct-toggle-text { font-size: 12px; color: rgba(255,255,255,0.6); }
+
+.ct-modal-actions {
+  display: flex; gap: 10px; justify-content: flex-end;
+  padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); margin-top: 4px;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+.ct-btn-primary {
+  background: #fff; color: #000; border: none; border-radius: 2rem;
+  padding: 9px 20px; font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: 'Outfit', sans-serif; transition: opacity 0.2s;
+}
+.ct-btn-primary:hover    { opacity: 0.85; }
+.ct-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.ct-btn-ghost {
+  background: none; border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.7);
+  border-radius: 2rem; padding: 9px 20px; font-size: 13px;
+  cursor: pointer; font-family: 'Outfit', sans-serif; transition: border-color 0.2s, color 0.2s;
+}
+.ct-btn-ghost:hover { border-color: rgba(255,255,255,0.35); color: #fff; }
+
+.ct-btn-danger {
+  background: rgba(255,80,80,0.15); border: 1px solid rgba(255,80,80,0.3); color: #ff6b6b;
+  border-radius: 2rem; padding: 9px 20px; font-size: 13px;
+  cursor: pointer; font-family: 'Outfit', sans-serif; transition: background 0.2s;
+}
+.ct-btn-danger:hover { background: rgba(255,80,80,0.25); }
+
+/* ── Page Header ──────────────────────────────────────────────────────────── */
+.ct-header-row {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 14px;
+}
+.ct-header-left h2 { font-size: 22px; font-weight: 600; margin: 0 0 4px; color: #fff; }
+.ct-header-left p  { font-size: 13px; color: rgba(255,255,255,0.5); margin: 0; font-weight: 300; }
+
+.ct-add-btn {
+  background: #fff; color: #000; border: none; border-radius: 2rem;
+  padding: 8px 18px; font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: 'Outfit', sans-serif; transition: opacity 0.2s;
+}
+.ct-add-btn:hover { opacity: 0.85; }
+
+/* ── Stats Grid ───────────────────────────────────────────────────────────── */
+.ct-stats-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+}
+.ct-stat-card {
+  background: rgb(50,50,50); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 12px;
+}
+.ct-stat-icon  { font-size: 22px; flex-shrink: 0; }
+.ct-stat-value { font-size: 20px; font-weight: 700; color: #fff; line-height: 1; }
+.ct-stat-total { font-size: 14px; font-weight: 400; color: rgba(255,255,255,0.35); }
+.ct-stat-label { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 3px; }
+
+/* ── Section Tab Bar ──────────────────────────────────────────────────────── */
+.ct-tab-bar {
+  display: flex; gap: 4px; overflow-x: auto; padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.ct-tab {
+  background: none; border: none; color: rgba(255,255,255,0.55);
+  padding: 8px 16px; font-size: 13px; border-radius: 8px;
+  cursor: pointer; white-space: nowrap; font-family: 'Outfit', sans-serif;
+  transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+}
+.ct-tab:hover  { color: #fff; background: rgba(255,255,255,0.05); }
+.ct-tab.active { color: #fff; background: rgba(255,255,255,0.1); font-weight: 500; }
+
+/* ── Empty / Loading ──────────────────────────────────────────────────────── */
+.ct-empty {
+  text-align: center; padding: 60px 20px;
+  background: rgb(50,50,50); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px;
+}
+.ct-empty-icon { font-size: 40px; margin-bottom: 12px; }
+.ct-empty p    { font-size: 14px; color: rgba(255,255,255,0.4); margin: 0 0 20px; }
+.ct-loading    { text-align: center; padding: 40px; font-size: 14px; color: rgba(255,255,255,0.4); }
+
+/* ── Card Grid ────────────────────────────────────────────────────────────── */
+.ct-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.ct-item-card {
+  background: rgb(50,50,50);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.ct-item-card:hover  { border-color: rgba(255,255,255,0.15); box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
+.ct-item-card.done   { border-color: rgba(78,205,196,0.2); }
+
+.ct-item-header { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+
+.ct-item-title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.ct-item-title     { font-size: 15px; font-weight: 600; color: #fff; line-height: 1.3; }
+.ct-title-done     { text-decoration: line-through; color: rgba(255,255,255,0.4); }
+
+.ct-item-tags { display: flex; flex-wrap: wrap; gap: 6px; flex-shrink: 0; }
+
+.ct-xp-pill {
+  font-size: 11px; font-weight: 600; color: yellow;
+  background: rgba(255,255,0,0.1); border: 1px solid rgba(255,255,0,0.2);
+  border-radius: 99px; padding: 2px 9px; white-space: nowrap;
+}
+.ct-done-pill {
+  font-size: 11px; font-weight: 600; color: #4ECDC4;
+  background: rgba(78,205,196,0.1); border: 1px solid rgba(78,205,196,0.2);
+  border-radius: 99px; padding: 2px 9px;
+}
+
+.ct-item-sub {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+
+.ct-cat-badge {
+  font-size: 11px; color: rgba(255,255,255,0.55);
+  background: rgba(255,255,255,0.06); border-radius: 6px; padding: 2px 8px;
+}
+.ct-status-badge-text { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: capitalize; }
+.ct-priority-badge    { font-size: 11px; font-weight: 500; }
+.ct-overdue-badge     { font-size: 10px; color: #FF6B6B; background: rgba(255,80,80,0.1); border-radius: 6px; padding: 2px 7px; }
+
+/* Proficiency bar */
+.ct-proficiency-bar {
+  display: flex; align-items: center; gap: 4px;
+}
+.ct-prof-segment {
+  height: 4px; flex: 1; border-radius: 2px; transition: background 0.3s;
+}
+.ct-prof-label {
+  font-size: 10px; color: rgba(255,255,255,0.4); white-space: nowrap; margin-left: 4px;
+  text-transform: capitalize;
+}
+
+/* Milestone sub-task progress bar */
+.ct-ms-progress-row { display: flex; align-items: center; gap: 8px; }
+.ct-ms-progress-bar {
+  flex: 1; height: 3px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden;
+}
+.ct-ms-progress-fill { height: 100%; background: #4ECDC4; border-radius: 99px; transition: width 0.3s; }
+.ct-ms-count { font-size: 11px; color: rgba(255,255,255,0.4); white-space: nowrap; }
+
+/* ── Expanded detail ──────────────────────────────────────────────────────── */
+.ct-item-expanded {
+  background: rgba(0,0,0,0.15); border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 12px 16px; display: flex; flex-direction: column; gap: 10px;
+  animation: fadeIn 0.2s ease;
+}
+
+.ct-item-desc  { font-size: 13px; color: rgba(255,255,255,0.6); margin: 0; line-height: 1.5; }
+.ct-item-notes { font-size: 12px; color: rgba(255,255,255,0.45); margin: 0; line-height: 1.5; font-style: italic; }
+
+.ct-detail-row {
+  display: flex; justify-content: space-between; font-size: 12px; color: rgba(255,255,255,0.5);
+}
+.ct-detail-row span:last-child { color: rgba(255,255,255,0.85); }
+.ct-overdue-text { color: #FF6B6B !important; }
+
+.ct-section-title {
+  font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.35);
+  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;
+}
+
+/* Resources */
+.ct-resource-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ct-resource-chip {
+  font-size: 11px; color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px; padding: 4px 10px; text-decoration: none; transition: background 0.2s;
+}
+.ct-resource-chip:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+/* Inline milestone checklist */
+.ct-milestones-section { display: flex; flex-direction: column; gap: 6px; }
+.ct-ms-item {
+  display: flex; align-items: center; gap: 8px; font-size: 12px; color: rgba(255,255,255,0.7);
+}
+.ct-ms-checkbox { accent-color: #4ECDC4; width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
+.ct-ms-done    { text-decoration: line-through; color: rgba(255,255,255,0.35); }
+.ct-ms-remove {
+  margin-left: auto; background: none; border: none; color: rgba(255,255,255,0.25);
+  font-size: 11px; cursor: pointer; padding: 2px 4px; border-radius: 4px; transition: color 0.2s;
+}
+.ct-ms-remove:hover { color: #ff6b6b; }
+
+.ct-ms-add-row { display: flex; gap: 6px; margin-top: 4px; }
+.ct-ms-input {
+  flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px; padding: 6px 10px; font-size: 12px; color: #fff;
+  font-family: 'Outfit', sans-serif; outline: none;
+}
+.ct-ms-input:focus { border-color: rgba(255,255,255,0.25); }
+.ct-ms-add-btn {
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: #fff;
+  border-radius: 6px; padding: 6px 12px; font-size: 14px; cursor: pointer; transition: background 0.2s;
+}
+.ct-ms-add-btn:hover { background: rgba(255,255,255,0.18); }
+
+/* ── Card Actions ─────────────────────────────────────────────────────────── */
+.ct-card-actions {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 10px 16px 14px;
+}
+.ct-action-btn {
+  background: none; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+  color: rgba(255,255,255,0.5); font-size: 11px; padding: 4px 9px;
+  cursor: pointer; font-family: 'Outfit', sans-serif; transition: all 0.2s;
+}
+.ct-action-btn:hover { background: rgba(255,255,255,0.07); color: #fff; border-color: rgba(255,255,255,0.2); }
+.ct-del-btn:hover      { color: #ff6b6b; border-color: rgba(255,80,80,0.3); }
+.ct-public-active      { color: #4ECDC4 !important; border-color: rgba(78,205,196,0.3) !important; }
+.ct-complete-btn:hover { color: #4ECDC4; border-color: rgba(78,205,196,0.3); }
+
+/* ── Timeline View (Milestones) ───────────────────────────────────────────── */
+.ct-timeline {
+  display: flex; flex-direction: column; gap: 0;
+}
+
+.ct-timeline-item {
+  display: flex; gap: 16px; align-items: flex-start;
+}
+
+.ct-timeline-line {
+  display: flex; flex-direction: column; align-items: center;
+  flex-shrink: 0; width: 36px; padding-top: 2px;
+}
+.ct-timeline-dot {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgb(50,50,50); border: 2px solid rgba(255,255,255,0.12);
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+  flex-shrink: 0;
+}
+.ct-timeline-connector {
+  width: 2px; flex: 1; min-height: 24px;
+  background: rgba(255,255,255,0.07); margin: 6px 0;
+}
+
+.ct-milestone-card {
+  flex: 1; background: rgb(50,50,50);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px; padding: 14px 16px;
+  margin-bottom: 16px;
+  transition: border-color 0.2s;
+}
+.ct-milestone-card:hover { border-color: rgba(255,255,255,0.15); }
+
+.ct-milestone-header {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+}
+.ct-milestone-title { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+.ct-milestone-meta  { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ct-type-badge {
+  font-size: 10px; font-weight: 600; color: yellow;
+  background: rgba(255,255,0,0.1); border: 1px solid rgba(255,255,0,0.2);
+  border-radius: 99px; padding: 2px 8px; text-transform: capitalize;
+}
+.ct-milestone-company { font-size: 12px; color: rgba(255,255,255,0.45); }
+.ct-milestone-date    { font-size: 12px; color: rgba(255,255,255,0.35); }
+.ct-milestone-notes   { font-size: 12px; color: rgba(255,255,255,0.5); margin: 8px 0 0; line-height: 1.5; }
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .ct-stats-grid     { grid-template-columns: repeat(2, 1fr); }
+  .ct-form-row       { grid-template-columns: 1fr; }
+  .ct-card-grid      { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .ct-header-row { flex-direction: column; align-items: flex-start; }
+  .ct-stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ct-tab { font-size: 12px; padding: 7px 12px; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

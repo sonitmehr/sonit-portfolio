@@ -12,6 +12,7 @@ import BucketList from "./pages/Admin/BucketList/BucketList";
 import SiteSettings from "./pages/Admin/Settings/SiteSettings";
 import PlaceholderPage from "./pages/Admin/PlaceholderPage";
 import CreditCardTracker from "./pages/Admin/CreditCards/CreditCardTracker";
+import CareerTracker from "./pages/Admin/Career/CareerTracker"; 
 
 function App() {
   return (
@@ -46,17 +47,7 @@ function App() {
                 />
               } 
             />
-            <Route 
-              path="career" 
-              element={
-                <PlaceholderPage 
-                  title="Career Growth Tracker" 
-                  icon="🚀" 
-                  phase="Phase 5 Upcoming" 
-                  description="Interactive skills roadmap, learning goals with difficulty/priority, career milestones timeline, and public showcase." 
-                />
-              } 
-            />
+            <Route path="career" element={<CareerTracker />} />
             <Route path="credit-cards" element={<CreditCardTracker />} />
             <Route 
               path="public-pages" 
