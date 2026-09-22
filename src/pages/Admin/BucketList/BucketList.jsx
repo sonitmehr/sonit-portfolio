@@ -44,6 +44,7 @@ const BucketList = () => {
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [activeTab, setActiveTab] = useState("places");
   const [statusFilter, setStatusFilter] = useState("all"); // all | todo | completed
+  const [visibilityFilter, setVisibilityFilter] = useState("all"); // all | public | private
   const [sortBy, setSortBy] = useState("createdAt"); // priority | xpValue | createdAt | targetDate
 
   const [items, setItems] = useState([]);
@@ -404,10 +405,11 @@ const BucketList = () => {
     }
   };
 
-  // Filter & Sort Logic
   const filteredItems = items
     .filter(it => it.category === activeTab)
     .filter(it => {
+      if (visibilityFilter === "public" && !it.isPublic) return false;
+      if (visibilityFilter === "private" && it.isPublic) return false;
       if (statusFilter === "all") return true;
       if (statusFilter === "todo") return it.status !== "completed";
       if (statusFilter === "completed") return it.status === "completed";
@@ -488,6 +490,27 @@ const BucketList = () => {
             onClick={() => setStatusFilter("completed")}
           >
             Accomplished
+          </button>
+
+          <span style={{ width: "1px", height: "20px", background: "rgba(255,255,255,0.15)", margin: "0 4px", alignSelf: "center" }} />
+
+          <button
+            className={`filter-pill ${visibilityFilter === "all" ? "active" : ""}`}
+            onClick={() => setVisibilityFilter("all")}
+          >
+            All Visibility
+          </button>
+          <button
+            className={`filter-pill ${visibilityFilter === "public" ? "active" : ""}`}
+            onClick={() => setVisibilityFilter("public")}
+          >
+            🌐 Public ({items.filter(it => it.category === activeTab && it.isPublic).length})
+          </button>
+          <button
+            className={`filter-pill ${visibilityFilter === "private" ? "active" : ""}`}
+            onClick={() => setVisibilityFilter("private")}
+          >
+            🔒 Private ({items.filter(it => it.category === activeTab && !it.isPublic).length})
           </button>
         </div>
 

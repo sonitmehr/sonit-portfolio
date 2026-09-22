@@ -310,3 +310,282 @@
   .topic-grid { grid-template-columns: 1fr; }
   .topic-footer { padding: 1.25rem; }
 }
+
+/* ── Gaming Hero Element & Stats Panel ── */
+.gaming-hero-container {
+  margin-top: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.gaming-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.gaming-stat-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(12px);
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gaming-stat-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 217, 61, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.gaming-stat-icon {
+  font-size: 1.75rem;
+  line-height: 1;
+  padding: 0.6rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gaming-stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.gaming-stat-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.gaming-stat-total {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 500;
+}
+
+.gaming-stat-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.gaming-stat-sub {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gaming-trophies-badge {
+  color: #ffd93d;
+  font-weight: 600;
+}
+
+.gaming-stat-progress-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  margin-top: 0.4rem;
+  overflow: hidden;
+  width: 100%;
+}
+
+.gaming-stat-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6c5ce7, #4ecdc4);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+/* ── Gaming Controls Row (Filter & Sort) ── */
+.gaming-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.gaming-filters-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.gaming-filter-divider {
+  width: 1px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 0.2rem;
+}
+
+@media (max-width: 640px) {
+  .gaming-filter-divider {
+    display: none;
+  }
+}
+
+.gaming-filter-pills {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.gaming-pill-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gaming-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.gaming-pill-btn.active {
+  background: #ffffff;
+  color: #121212;
+  border-color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.2);
+}
+
+.gaming-pill-btn.gaming-pill-in-progress.active {
+  background: rgba(78, 205, 196, 0.2);
+  color: #4ecdc4;
+  border-color: #4ecdc4;
+  box-shadow: 0 2px 12px rgba(78, 205, 196, 0.25);
+}
+
+.gaming-pill-btn.gaming-pill-completed.active {
+  background: rgba(255, 217, 61, 0.2);
+  color: #ffd93d;
+  border-color: #ffd93d;
+  box-shadow: 0 2px 12px rgba(255, 217, 61, 0.25);
+}
+
+.gaming-pill-btn.gaming-pill-shelved.active {
+  background: rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
+  border-color: #ff6b6b;
+  box-shadow: 0 2px 12px rgba(255, 107, 107, 0.25);
+}
+
+.topic-reset-btn {
+  margin-top: 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  padding: 0.5rem 1.2rem;
+  border-radius: 999px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.topic-reset-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.gaming-sort-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.gaming-sort-label {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+}
+
+.gaming-sort-dropdown {
+  background: rgba(30, 30, 40, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 0.45rem 0.85rem;
+  color: #ffffff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.gaming-sort-dropdown:focus {
+  border-color: #ffd93d;
+}
+
+/* ── Trophy Pills in Card ── */
+.topic-item-trophies {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.topic-trophy-item {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.topic-trophy-item.plat { color: #a29bfe; border-color: rgba(162, 155, 254, 0.3); }
+.topic-trophy-item.gold { color: #ffd93d; border-color: rgba(255, 217, 61, 0.3); }
+.topic-trophy-item.silver { color: #dfe6e9; border-color: rgba(223, 230, 233, 0.3); }
+.topic-trophy-item.bronze { color: #e17055; border-color: rgba(225, 112, 85, 0.3); }
+
+@media (max-width: 768px) {
+  .gaming-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .gaming-controls-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .gaming-sort-wrapper {
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 480px) {
+  .gaming-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}

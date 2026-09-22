@@ -58,7 +58,7 @@ function steamSyncPlugin(env) {
               steamAppId: g.appid,
               title: g.name,
               platform: "steam",
-              genre: "Steam",
+              genre: "",
               playtimeHours: hours,
               playtimeMinutes: g.playtime_forever,
               coverArtUrl: `https://steamcdn-a.akamaihd.net/steam/apps/${g.appid}/header.jpg`,
@@ -70,7 +70,7 @@ function steamSyncPlugin(env) {
               achievementsUnlocked: 0,
               trophies: { platinum: 0, gold: 0, silver: 0, bronze: 0 },
               rating: null,
-              personalNotes: `Synced from Steam (AppID: ${g.appid})`,
+              personalNotes: "",
               isPublic: false,
             };
           });

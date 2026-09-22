@@ -8,6 +8,7 @@ import {
   deleteDoc,
   onSnapshot,
   serverTimestamp,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "../../../lib/firebase";
 import {
@@ -62,12 +63,13 @@ const PRIORITY_OPTIONS = [
 ];
 
 const SORT_OPTIONS = [
-  { value: "recent",          label: "Recently Added / Updated" },
+  { value: "recent",          label: "Date Added (Newest First)" },
   { value: "title_asc",       label: "Title (A to Z)" },
   { value: "playtime_desc",   label: "Playtime (Highest First)" },
   { value: "completion_desc", label: "Achievements % (Highest First)" },
   { value: "xp_desc",         label: "XP Value (Highest First)" },
   { value: "rating_desc",     label: "Rating (Highest First)" },
+  { value: "updated_desc",    label: "Recently Updated" },
 ];
 
 const BLANK_GAME = {
@@ -187,6 +189,7 @@ const GamingTracker = () => {
   const [formData, setFormData]                   = useState(BLANK_GAME);
   const [activeStatusFilter, setActiveStatusFilter] = useState("all");
   const [platformFilter, setPlatformFilter]       = useState("all");
+  const [visibilityFilter, setVisibilityFilter]   = useState("all"); // 'all' | 'public' | 'private'
   const [searchQuery, setSearchQuery]             = useState("");
   const [sortBy, setSortBy]                       = useState("recent");
   const [deleteTarget, setDeleteTarget]           = useState(null);
@@ -202,6 +205,8 @@ const GamingTracker = () => {
   const [selectedSteamIds, setSelectedSteamIds]   = useState(new Set());
   const [onlyPlayed, setOnlyPlayed]               = useState(true);
   const [importingSteam, setImportingSteam]       = useState(false);
+  const [selectedGameIds, setSelectedGameIds]     = useState(new Set());
+  const [bulkApplying, setBulkApplying]           = useState(false);
 
   // Real-time Firestore sync
   useEffect(() => {
@@ -328,7 +333,11 @@ const GamingTracker = () => {
   // ─── Quick Actions ─────────────────────────────────────────────────────────
 
   const handleToggleComplete = async (game, e) => {
-    if (e) e.stopPropagation();
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      if (e.currentTarget) e.currentTarget.blur();
+    }
     const isCompleted = game.status === "completed";
     const newStatus = isCompleted ? "in_progress" : "completed";
 
@@ -337,8 +346,12 @@ const GamingTracker = () => {
       const updates = {
         status: newStatus,
         completedAt: newStatus === "completed" ? new Date().toISOString() : null,
-        updatedAt: serverTimestamp(),
       };
+
+      // Optimistically update in place so list never reorders
+      setGames((prev) =>
+        prev.map((g) => (g.id === game.id ? { ...g, ...updates } : g))
+      );
 
       await setDoc(gameRef, updates, { merge: true });
 
@@ -353,16 +366,136 @@ const GamingTracker = () => {
   };
 
   const handleTogglePublic = async (game, e) => {
-    if (e) e.stopPropagation();
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      if (e.currentTarget) e.currentTarget.blur();
+    }
     try {
       const nextPublic = !game.isPublic;
+      // Optimistically update in place without reordering
+      setGames((prev) =>
+        prev.map((g) => (g.id === game.id ? { ...g, isPublic: nextPublic } : g))
+      );
+      // Persist only isPublic without touching updatedAt so sort position remains fixed
       await setDoc(
         doc(db, "gamingProgress", game.id),
-        { isPublic: nextPublic, updatedAt: serverTimestamp() },
+        { isPublic: nextPublic },
         { merge: true }
       );
     } catch (err) {
       console.error("Public toggle error:", err);
+    }
+  };
+
+  // ─── Bulk Selection Handlers ───────────────────────────────────────────────
+
+  const toggleSelectGame = (gameId, e) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      if (e.currentTarget) e.currentTarget.blur();
+    }
+    setSelectedGameIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(gameId)) next.delete(gameId);
+      else next.add(gameId);
+      return next;
+    });
+  };
+
+  const handleToggleSelectAllFiltered = () => {
+    if (filteredGames.length === 0) return;
+    const allFilteredSelected = filteredGames.every((g) => selectedGameIds.has(g.id));
+    if (allFilteredSelected) {
+      // Deselect filtered games
+      setSelectedGameIds((prev) => {
+        const next = new Set(prev);
+        filteredGames.forEach((g) => next.delete(g.id));
+        return next;
+      });
+    } else {
+      // Select all filtered games
+      setSelectedGameIds((prev) => {
+        const next = new Set(prev);
+        filteredGames.forEach((g) => next.add(g.id));
+        return next;
+      });
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedGameIds(new Set());
+  };
+
+  const handleBulkApply = async (field, value) => {
+    if (selectedGameIds.size === 0 || bulkApplying) return;
+
+    setBulkApplying(true);
+    try {
+      const targetGames = games.filter((g) => selectedGameIds.has(g.id));
+      if (targetGames.length === 0) return;
+
+      let updateFields = {};
+      if (field === "visibility") {
+        updateFields = { isPublic: Boolean(value) };
+      } else if (field === "status") {
+        updateFields = {
+          status: value,
+          completedAt: value === "completed" ? new Date().toISOString() : null,
+        };
+      }
+
+      // 1. Optimistic update (without altering position/order)
+      setGames((prev) =>
+        prev.map((g) => (selectedGameIds.has(g.id) ? { ...g, ...updateFields } : g))
+      );
+
+      // 2. Commit batch to Firestore in chunks of up to 400
+      const ids = Array.from(selectedGameIds);
+      const chunkSize = 400;
+      for (let i = 0; i < ids.length; i += chunkSize) {
+        const chunk = ids.slice(i, i + chunkSize);
+        const batch = writeBatch(db);
+        chunk.forEach((id) => {
+          const ref = doc(db, "gamingProgress", id);
+          batch.set(ref, updateFields, { merge: true });
+        });
+        await batch.commit();
+      }
+
+      // 3. XP & Notifications
+      if (field === "status" && value === "completed") {
+        let newlyCompletedXp = 0;
+        for (const g of targetGames) {
+          if (g.status !== "completed") {
+            newlyCompletedXp += Number(g.xpValue) || DIFFICULTY_XP[g.difficulty] || 100;
+            await awardGamingXp({ ...g, ...updateFields });
+          }
+        }
+        triggerConfetti();
+        setXpToast({
+          xp: newlyCompletedXp || 100,
+          title: `${targetGames.length} Game${targetGames.length > 1 ? "s" : ""} Marked Completed`,
+        });
+      } else if (field === "visibility") {
+        setXpToast({
+          xp: 0,
+          title: `${targetGames.length} Game${targetGames.length > 1 ? "s" : ""} Made ${value ? "Public 🌐" : "Private 🔒"}`,
+        });
+      } else if (field === "status") {
+        setXpToast({
+          xp: 0,
+          title: `${targetGames.length} Game${targetGames.length > 1 ? "s" : ""} set to ${STATUS_LABELS[value]?.label || value}`,
+        });
+      }
+
+      setTimeout(() => setXpToast(null), 3500);
+      setSelectedGameIds(new Set());
+    } catch (err) {
+      console.error("Bulk apply error:", err);
+    } finally {
+      setBulkApplying(false);
     }
   };
 
@@ -397,7 +530,10 @@ const GamingTracker = () => {
         bronze: game.trophies?.bronze ?? 0,
       },
       rating: game.rating ?? "",
-      personalNotes: game.personalNotes || "",
+      personalNotes:
+        game.personalNotes && !game.personalNotes.startsWith("Synced from Steam")
+          ? game.personalNotes
+          : "",
       isPublic: Boolean(game.isPublic),
     });
     setImagePreviewError(false);
@@ -444,6 +580,7 @@ const GamingTracker = () => {
         genre: formData.genre.trim(),
         coverArtUrl: formData.coverArtUrl.trim(),
         playtimeHours: formData.playtimeHours !== "" ? Number(formData.playtimeHours) : 0,
+        playtimeMinutes: formData.playtimeHours !== "" ? Math.round(Number(formData.playtimeHours) * 60) : 0,
         status: formData.status,
         priority: formData.priority,
         difficulty: formData.difficulty,
@@ -653,6 +790,8 @@ const GamingTracker = () => {
       .filter((g) => {
         if (activeStatusFilter !== "all" && g.status !== activeStatusFilter) return false;
         if (platformFilter !== "all" && g.platform !== platformFilter) return false;
+        if (visibilityFilter === "public" && !g.isPublic) return false;
+        if (visibilityFilter === "private" && g.isPublic) return false;
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
           const matchTitle = (g.title || "").toLowerCase().includes(q);
@@ -677,15 +816,24 @@ const GamingTracker = () => {
         if (sortBy === "xp_desc") {
           return (Number(b.xpValue) || 0) - (Number(a.xpValue) || 0);
         }
-        if (sortBy === "rating_desc") {
-          return (Number(b.rating) || 0) - (Number(a.rating) || 0);
+        if (sortBy === "updated_desc") {
+          const aTime = a.updatedAt?.seconds || (typeof a.updatedAt === "string" ? new Date(a.updatedAt).getTime() / 1000 : 0) || 0;
+          const bTime = b.updatedAt?.seconds || (typeof b.updatedAt === "string" ? new Date(b.updatedAt).getTime() / 1000 : 0) || 0;
+          return bTime - aTime;
         }
-        // "recent" default
-        const aTime = a.updatedAt?.seconds || a.createdAt?.seconds || 0;
-        const bTime = b.updatedAt?.seconds || b.createdAt?.seconds || 0;
-        return bTime - aTime;
+        // "recent" default: Sort by Date Added (createdAt). Never moves on approval/edit
+        const aCreated = a.createdAt?.seconds || (typeof a.createdAt === "string" ? new Date(a.createdAt).getTime() / 1000 : 0) || 0;
+        const bCreated = b.createdAt?.seconds || (typeof b.createdAt === "string" ? new Date(b.createdAt).getTime() / 1000 : 0) || 0;
+        if (bCreated !== aCreated) {
+          return bCreated - aCreated;
+        }
+        // Stable deterministic tie-breaker so the list stays completely in place
+        return (a.title || "").localeCompare(b.title || "");
       });
-  }, [games, activeStatusFilter, platformFilter, searchQuery, sortBy]);
+  }, [games, activeStatusFilter, platformFilter, visibilityFilter, searchQuery, sortBy]);
+
+  const isAllFilteredSelected =
+    filteredGames.length > 0 && filteredGames.every((g) => selectedGameIds.has(g.id));
 
   return (
     <div className="gt-container">
@@ -870,6 +1018,48 @@ const GamingTracker = () => {
           </div>
 
           <div className="gt-selects-wrapper">
+            {/* Select All / Deselect All for Bulk Actions */}
+            <button
+              type="button"
+              className={`gt-bulk-toggle-btn ${isAllFilteredSelected ? "active" : ""}`}
+              onClick={handleToggleSelectAllFiltered}
+              title={isAllFilteredSelected ? "Deselect all visible games" : "Select all visible games"}
+            >
+              <span className="gt-bulk-toggle-check">{isAllFilteredSelected ? "☑" : "☐"}</span>
+              <span>{isAllFilteredSelected ? "Deselect All" : "Select All"}</span>
+              {selectedGameIds.size > 0 && (
+                <span className="gt-bulk-count-pill">{selectedGameIds.size}</span>
+              )}
+            </button>
+
+            {/* Visibility Filter (Public / Private) */}
+            <div className="gt-visibility-pills" role="group" aria-label="Visibility Filter">
+              <button
+                type="button"
+                className={`gt-vis-pill ${visibilityFilter === "all" ? "active" : ""}`}
+                onClick={() => setVisibilityFilter("all")}
+                title="Show all games"
+              >
+                All ({games.length})
+              </button>
+              <button
+                type="button"
+                className={`gt-vis-pill gt-vis-public ${visibilityFilter === "public" ? "active" : ""}`}
+                onClick={() => setVisibilityFilter("public")}
+                title="Show only public games"
+              >
+                🌐 Public ({games.filter((g) => g.isPublic).length})
+              </button>
+              <button
+                type="button"
+                className={`gt-vis-pill gt-vis-private ${visibilityFilter === "private" ? "active" : ""}`}
+                onClick={() => setVisibilityFilter("private")}
+                title="Show only private games"
+              >
+                🔒 Private ({games.filter((g) => !g.isPublic).length})
+              </button>
+            </div>
+
             {/* Platform Filter */}
             <select
               value={platformFilter}
@@ -937,6 +1127,7 @@ const GamingTracker = () => {
                 onClick={() => {
                   setActiveStatusFilter("all");
                   setPlatformFilter("all");
+                  setVisibilityFilter("all");
                   setSearchQuery("");
                 }}
               >
@@ -961,10 +1152,12 @@ const GamingTracker = () => {
             const tr = game.trophies || {};
             const hasTrophies = (tr.platinum || 0) + (tr.gold || 0) + (tr.silver || 0) + (tr.bronze || 0) > 0;
 
+            const isSelected = selectedGameIds.has(game.id);
+
             return (
               <div
                 key={game.id}
-                className={`gt-card ${isCompleted ? "gt-card-completed" : ""}`}
+                className={`gt-card ${isCompleted ? "gt-card-completed" : ""} ${isSelected ? "gt-card-selected" : ""}`}
               >
                 {/* ── Card Cover Header ── */}
                 <div className="gt-card-cover-wrapper">
@@ -992,16 +1185,28 @@ const GamingTracker = () => {
 
                   {/* Badges on Top of Cover */}
                   <div className="gt-card-top-badges">
-                    <span
-                      className="gt-platform-badge"
-                      style={{
-                        borderColor: platform.color,
-                        color: platform.color,
-                      }}
-                    >
-                      <span>{platform.icon}</span>
-                      <span>{platform.badge}</span>
-                    </span>
+                    <div className="gt-top-badge-group">
+                      <button
+                        type="button"
+                        className={`gt-card-select-btn ${isSelected ? "selected" : ""}`}
+                        onClick={(e) => toggleSelectGame(game.id, e)}
+                        title={isSelected ? "Deselect game" : "Select game for bulk actions"}
+                        aria-label={`Select ${game.title}`}
+                      >
+                        <span className="gt-select-checkmark">{isSelected ? "✓" : ""}</span>
+                      </button>
+
+                      <span
+                        className="gt-platform-badge"
+                        style={{
+                          borderColor: platform.color,
+                          color: platform.color,
+                        }}
+                      >
+                        <span>{platform.icon}</span>
+                        <span>{platform.badge}</span>
+                      </span>
+                    </div>
 
                     <span className="gt-xp-badge">
                       +{game.xpValue || 100} XP
@@ -1044,7 +1249,10 @@ const GamingTracker = () => {
 
                   {/* Genre & Priority Tag Row */}
                   <div className="gt-meta-row">
-                    {game.genre && <span className="gt-genre-tag">{game.genre}</span>}
+                    {game.genre &&
+                      game.genre.toLowerCase().trim() !== (game.platform || "").toLowerCase().trim() && (
+                        <span className="gt-genre-tag">{game.genre}</span>
+                      )}
                     {game.priority && (
                       <span className={`gt-priority-pill gt-priority-${game.priority}`}>
                         {game.priority}
@@ -1107,16 +1315,18 @@ const GamingTracker = () => {
                   )}
 
                   {/* Personal Notes snippet */}
-                  {game.personalNotes && (
-                    <div className="gt-notes-preview">
-                      "{game.personalNotes}"
-                    </div>
-                  )}
+                  {game.personalNotes &&
+                    !game.personalNotes.startsWith("Synced from Steam") && (
+                      <div className="gt-notes-preview">
+                        "{game.personalNotes}"
+                      </div>
+                    )}
 
                   {/* ── Card Footer Actions ── */}
                   <div className="gt-card-footer">
                     {/* Public Toggle */}
                     <button
+                      type="button"
                       className={`gt-public-toggle ${game.isPublic ? "is-public" : ""}`}
                       onClick={(e) => handleTogglePublic(game, e)}
                       title={game.isPublic ? "Visible on Public Topic Page" : "Private (Hidden from public)"}
@@ -1127,6 +1337,7 @@ const GamingTracker = () => {
                     <div className="gt-action-buttons">
                       {/* Complete / Undo Complete Toggle */}
                       <button
+                        type="button"
                         className={`gt-complete-btn ${isCompleted ? "is-completed" : ""}`}
                         onClick={(e) => handleToggleComplete(game, e)}
                         title={isCompleted ? "Completed! Click to unmark" : "Mark as completed (+XP)"}
@@ -1136,8 +1347,12 @@ const GamingTracker = () => {
 
                       {/* Edit Button */}
                       <button
+                        type="button"
                         className="gt-icon-btn"
-                        onClick={(e) => openEditModal(game, e)}
+                        onClick={(e) => {
+                          if (e.currentTarget) e.currentTarget.blur();
+                          openEditModal(game, e);
+                        }}
                         title="Edit Game"
                       >
                         ✏️
@@ -1145,9 +1360,12 @@ const GamingTracker = () => {
 
                       {/* Delete Button */}
                       <button
+                        type="button"
                         className="gt-icon-btn gt-icon-btn-danger"
                         onClick={(e) => {
                           e.stopPropagation();
+                          e.preventDefault();
+                          if (e.currentTarget) e.currentTarget.blur();
                           setDeleteTarget(game);
                         }}
                         title="Delete Game"
@@ -1161,6 +1379,96 @@ const GamingTracker = () => {
             );
           })}
         </div>
+      )}
+
+      {/* ── Bulk Actions Floating Toolbar ── */}
+      {selectedGameIds.size > 0 && (
+        <aside className="gt-bulk-bar" aria-label="Bulk actions toolbar">
+          <div className="gt-bulk-bar-inner">
+            <div className="gt-bulk-left">
+              <span className="gt-bulk-count-badge">
+                🎮 {selectedGameIds.size} game{selectedGameIds.size > 1 ? "s" : ""} selected
+              </span>
+              <button
+                type="button"
+                className="gt-bulk-clear-btn"
+                onClick={handleClearSelection}
+                disabled={bulkApplying}
+                title="Deselect all games"
+              >
+                ✕ Deselect
+              </button>
+            </div>
+
+            <div className="gt-bulk-actions">
+              {/* Bulk Visibility Actions */}
+              <div className="gt-bulk-group">
+                <span className="gt-bulk-group-label">Visibility:</span>
+                <button
+                  type="button"
+                  className="gt-bulk-action-btn gt-bulk-public"
+                  onClick={() => handleBulkApply("visibility", true)}
+                  disabled={bulkApplying}
+                  title="Make all selected games Public"
+                >
+                  🌐 Make Public
+                </button>
+                <button
+                  type="button"
+                  className="gt-bulk-action-btn gt-bulk-private"
+                  onClick={() => handleBulkApply("visibility", false)}
+                  disabled={bulkApplying}
+                  title="Make all selected games Private"
+                >
+                  🔒 Make Private
+                </button>
+              </div>
+
+              <div className="gt-bulk-divider" />
+
+              {/* Bulk Status Actions */}
+              <div className="gt-bulk-group">
+                <span className="gt-bulk-group-label">Status:</span>
+                <button
+                  type="button"
+                  className="gt-bulk-action-btn gt-bulk-playing"
+                  onClick={() => handleBulkApply("status", "in_progress")}
+                  disabled={bulkApplying}
+                  title="Mark selected games as In Progress / Playing"
+                >
+                  🕹️ In Progress
+                </button>
+                <button
+                  type="button"
+                  className="gt-bulk-action-btn gt-bulk-completed"
+                  onClick={() => handleBulkApply("status", "completed")}
+                  disabled={bulkApplying}
+                  title="Mark selected games as Completed (+XP)"
+                >
+                  🏆 Completed
+                </button>
+                <button
+                  type="button"
+                  className="gt-bulk-action-btn gt-bulk-backlog"
+                  onClick={() => handleBulkApply("status", "not_started")}
+                  disabled={bulkApplying}
+                  title="Move selected games to Backlog"
+                >
+                  ⏳ Backlog
+                </button>
+                <button
+                  type="button"
+                  className="gt-bulk-action-btn gt-bulk-shelved"
+                  onClick={() => handleBulkApply("status", "abandoned")}
+                  disabled={bulkApplying}
+                  title="Move selected games to Shelved"
+                >
+                  📦 Shelved
+                </button>
+              </div>
+            </div>
+          </div>
+        </aside>
       )}
 
       {/* ── Add / Edit Game Modal ── */}
@@ -1287,12 +1595,12 @@ const GamingTracker = () => {
                   <label>Playtime (Hours)</label>
                   <input
                     type="number"
-                    step="0.5"
+                    step="any"
                     min="0"
                     name="playtimeHours"
                     value={formData.playtimeHours}
                     onChange={handleField}
-                    placeholder="e.g. 45"
+                    placeholder="e.g. 45 or 2.9"
                     className="gt-input"
                   />
                 </div>
