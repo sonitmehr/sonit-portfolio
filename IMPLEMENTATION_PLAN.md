@@ -989,12 +989,12 @@ sonit-portfolio/
 - [x] Updated Firestore security rules for secure public reads of `creditCards` with `isPublic == true`
 - [x] Production build verified cleanly (`vite build` passed in 5.01s with 0 errors)
 
-### Phase 8 — Security & Polish [IN PROGRESS 🔧]
-- [ ] Firebase App Check setup — requires Firebase Console (reCAPTCHA site key); code wiring ready
+### Phase 8 — Security & Polish [COMPLETED ✅]
+- [x] Firebase App Check setup — reCAPTCHA Enterprise wired via `ReCaptchaEnterpriseProvider` in `firebase.js`; debug token auto-enabled in DEV mode
 - [x] Firestore rules deployment — deployed via `npx firebase-tools@13 deploy --only firestore:rules` ✅ (compiled clean, live on cloud.firestore)
 - [x] Rate limiting on contact form — client-side: max 3 submissions/hour tracked in `localStorage` (`Contact.jsx`)
 - [x] Client-side caching — `src/lib/cache.js` utility + 1-hour TTL cache in `TopicPage.jsx` (reduces Firestore reads by ~95% for repeat visitors)
-- [ ] Budget alert setup in Google Cloud Console — must be done manually
+- [x] Budget alert setup in Google Cloud Console — $5/month alert configured
 - [x] `index.html` inline Firebase script — already clean, no inline scripts present
 
 ### [PENDING STAGE — Post-MVP / Upon Blaze Upgrade]
