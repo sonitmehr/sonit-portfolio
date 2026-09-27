@@ -680,9 +680,11 @@ const GamingTracker = () => {
     setSteamError(null);
     try {
       const res = await fetch("/api/steam/games");
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || `HTTP ${res.status}`);
+      const contentType = res.headers.get("content-type") || "";
+      if (!res.ok || !contentType.includes("application/json")) {
+        throw new Error(
+          "Steam sync proxy is only available during local development (`npm run dev`) or via Cloud Functions on the Blaze plan. You can add games manually or seed sample games below."
+        );
       }
       const data = await res.json();
       const fetched = data.games || [];
