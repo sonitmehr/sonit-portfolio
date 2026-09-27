@@ -4,6 +4,48 @@ import WorkExpCard from "./WorkExpCard";
 import assets from "../../assets/assets";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../lib/firebase";
+import * as cache from "../../lib/cache";
+
+/* ── Rate-limit config ─────────────────────────────────────────────────────
+ * Allow at most MAX_SUBMISSIONS contact submissions within WINDOW_MS.
+ * Timestamps are stored in localStorage so they persist across page refreshes.
+ * ─────────────────────────────────────────────────────────────────────────── */
+const MAX_SUBMISSIONS = 3;
+const WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const RATE_LIMIT_KEY = "contact_submissions";
+
+function getRateLimitTimestamps() {
+  try {
+    const raw = localStorage.getItem(RATE_LIMIT_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    // Keep only timestamps within the rolling window
+    const now = Date.now();
+    return parsed.filter((ts) => now - ts < WINDOW_MS);
+  } catch (_) {
+    return [];
+  }
+}
+
+function recordSubmission() {
+  try {
+    const timestamps = getRateLimitTimestamps();
+    timestamps.push(Date.now());
+    localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(timestamps));
+  } catch (_) {}
+}
+
+function getMinutesUntilReset() {
+  try {
+    const timestamps = getRateLimitTimestamps();
+    if (timestamps.length === 0) return 0;
+    const oldest = Math.min(...timestamps);
+    const resetAt = oldest + WINDOW_MS;
+    return Math.ceil((resetAt - Date.now()) / 60000);
+  } catch (_) {
+    return 60;
+  }
+}
 
 function Contact() {
   const [formData, setFormData] = useState({
@@ -21,6 +63,18 @@ function Contact() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // ── Client-side rate limit check ─────────────────────────────────────────
+    const recentSubmissions = getRateLimitTimestamps();
+    if (recentSubmissions.length >= MAX_SUBMISSIONS) {
+      const minutesLeft = getMinutesUntilReset();
+      setStatus("error");
+      setStatusMsg(
+        `You've sent ${MAX_SUBMISSIONS} messages recently. Please wait ${minutesLeft} minute${minutesLeft !== 1 ? "s" : ""} before trying again.`
+      );
+      return;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     const trimmedName = formData.name.trim();
     const trimmedEmail = formData.email.trim();
@@ -50,6 +104,9 @@ function Contact() {
         message: trimmedMessage,
         createdAt: serverTimestamp(),
       });
+
+      // Record this successful submission for rate limiting
+      recordSubmission();
 
       setStatus("success");
       setStatusMsg("Thank you! Your message has been sent successfully.");

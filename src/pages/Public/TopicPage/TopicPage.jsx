@@ -9,8 +9,12 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { db } from "../../../lib/firebase";
+import * as cache from "../../../lib/cache";
 import CreditCardShowcase from "./CreditCardShowcase";
 import "./TopicPage.css";
+
+/* Cache TTL: 1 hour for public page data */
+const CACHE_TTL = 60 * 60 * 1000;
 
 /* ── Category colour palette ── */
 const CATEGORY_COLORS = [
@@ -196,6 +200,20 @@ export default function TopicPage({ slug: propSlug }) {
       setLoading(true);
       setNotFound(false);
 
+      // ── Check cache first ──────────────────────────────────────────────────
+      const cachedPayload = cache.get(`topic-${slug}`);
+      if (cachedPayload) {
+        const { config, items: cachedItems } = cachedPayload;
+        setPageConfig(config);
+        setItems(cachedItems);
+        document.title = `${config.title || slug} — Sonit Mehrotra`;
+        const metaDesc = document.querySelector("meta[name='description']");
+        if (metaDesc) metaDesc.setAttribute("content", config.seoDescription || config.description || "");
+        setLoading(false);
+        return;
+      }
+      // ──────────────────────────────────────────────────────────────────────
+
       try {
         // 1. Load page config
         const pageSnap = await getDoc(doc(db, "publicPages", slug));
@@ -359,6 +377,13 @@ export default function TopicPage({ slug: propSlug }) {
 
         loadedItems.sort((a, b) => (a.order ?? 99) - (b.order ?? 99) || (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
         setItems(loadedItems);
+
+        // ── Persist to cache for 1 hour ──────────────────────────────────────
+        // Firestore Timestamps are not JSON-serialisable — strip them before caching
+        const serializableItems = loadedItems.map(({ createdAt, ...rest }) => rest);
+        cache.set(`topic-${slug}`, { config, items: serializableItems }, CACHE_TTL);
+        // ────────────────────────────────────────────────────────────────────
+
       } catch (err) {
         console.error("TopicPage load error:", err);
         setNotFound(true);
