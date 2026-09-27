@@ -214,11 +214,11 @@ export default function TopicPage({ slug: propSlug }) {
       }
       // ──────────────────────────────────────────────────────────────────────
 
-      try {
-        // 1. Load page config
-        const pageSnap = await getDoc(doc(db, "publicPages", slug));
+      // 1. Resolve page config (default to built-in config if known)
+      let config = DEFAULT_PAGE_CONFIGS[slug] || null;
 
-        let config = null;
+      try {
+        const pageSnap = await getDoc(doc(db, "publicPages", slug));
         if (pageSnap.exists()) {
           const data = pageSnap.data();
           if (data.enabled === false) {
@@ -227,16 +227,20 @@ export default function TopicPage({ slug: propSlug }) {
             return;
           }
           config = { ...(DEFAULT_PAGE_CONFIGS[slug] || {}), ...data };
-        } else if (DEFAULT_PAGE_CONFIGS[slug]) {
-          config = DEFAULT_PAGE_CONFIGS[slug];
-        } else {
-          setNotFound(true);
-          setLoading(false);
-          return;
         }
+      } catch (err) {
+        console.warn(`Could not load Firestore publicPages config for /${slug}, using default:`, err);
+      }
 
-        setPageConfig(config);
+      if (!config) {
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
 
+      setPageConfig(config);
+
+      try {
         // 2. Set SEO
         document.title = `${config.title || slug} — Sonit Mehrotra`;
         const metaDesc = document.querySelector("meta[name='description']");
@@ -386,7 +390,9 @@ export default function TopicPage({ slug: propSlug }) {
 
       } catch (err) {
         console.error("TopicPage load error:", err);
-        setNotFound(true);
+        if (!DEFAULT_PAGE_CONFIGS[slug]) {
+          setNotFound(true);
+        }
       }
 
       setLoading(false);

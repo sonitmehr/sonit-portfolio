@@ -86,6 +86,9 @@ export default function CreditCardShowcase() {
           const network = (card.network || "other").toLowerCase();
           const isFlipped = flipped === card.id;
           const networkColor = NETWORK_COLORS[network] || NETWORK_COLORS.other;
+          const cardName = card.cardName || card.name || "Card";
+          const cardImageUrl = card.cardImageUrl || card.imageUrl || "";
+          const cardJoiningDate = card.joiningDate || card.joinedDate || "";
 
           return (
             <div
@@ -96,15 +99,15 @@ export default function CreditCardShowcase() {
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === "Enter" && setFlipped(isFlipped ? null : card.id)}
-              aria-label={`${card.name || "Card"} — tap to see details`}
+              aria-label={`${cardName} — tap to see details`}
             >
               <div className="ccs-card-flipper">
                 {/* ── Front ── */}
                 <div
                   className="ccs-card ccs-card-front"
                   style={{
-                    background: card.imageUrl
-                      ? `url(${card.imageUrl}) center/cover no-repeat`
+                    background: cardImageUrl
+                      ? `url(${cardImageUrl}) center/cover no-repeat`
                       : `linear-gradient(135deg, ${networkColor}cc, ${networkColor}55)`,
                   }}
                 >
@@ -122,7 +125,7 @@ export default function CreditCardShowcase() {
                     <div className="ccs-card-chip">▬</div>
                     <div className="ccs-card-number">•••• •••• •••• ••••</div>
                     <div className="ccs-card-bottom">
-                      <span className="ccs-card-name">{card.name || "Card"}</span>
+                      <span className="ccs-card-name">{cardName}</span>
                       <span
                         className="ccs-card-status"
                         style={{
@@ -142,7 +145,7 @@ export default function CreditCardShowcase() {
                 <div className="ccs-card ccs-card-back">
                   <div className="ccs-card-back-stripe" />
                   <div className="ccs-card-back-content">
-                    <h3 className="ccs-detail-name">{card.name}</h3>
+                    <h3 className="ccs-detail-name">{cardName}</h3>
                     {card.issuer && (
                       <p className="ccs-detail-row">
                         <span className="ccs-detail-label">Issuer</span>
@@ -161,11 +164,11 @@ export default function CreditCardShowcase() {
                         <span>₹{card.annualFee || 0}</span>
                       </p>
                     )}
-                    {card.joinedDate && (
+                    {cardJoiningDate && (
                       <p className="ccs-detail-row">
                         <span className="ccs-detail-label">Since</span>
                         <span>
-                          {new Date(card.joinedDate).toLocaleDateString("en-IN", {
+                          {new Date(cardJoiningDate).toLocaleDateString("en-IN", {
                             month: "short",
                             year: "numeric",
                           })}

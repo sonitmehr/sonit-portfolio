@@ -3,8 +3,10 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function isAdmin() {
-      return request.auth != null && 
-             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      return request.auth != null && (
+        request.auth.uid == 'R4yb7LzRJfhLQ31AQF6G6px2Eg73' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
     }
 
     // Admins registry — authenticated user can read their own admin status; writes restricted to console/admin SDK

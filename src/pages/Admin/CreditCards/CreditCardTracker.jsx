@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import confetti from "canvas-confetti";
 import {
@@ -226,17 +226,20 @@ const CreditCardTracker = () => {
     const benefitsArray = formData.benefits.split(",").map((b) => b.trim()).filter(Boolean);
 
     const payload = {
+      name:           formData.cardName.trim(),
       cardName:       formData.cardName.trim(),
       issuer:         formData.issuer.trim(),
       network:        formData.network,
       cardType:       formData.cardType,
       annualFee:      Number(formData.annualFee) || 0,
       creditLimit:    Number(formData.creditLimit) || 0,
+      joinedDate:     formData.joiningDate,
       joiningDate:    formData.joiningDate,
       status:         formData.status,
       benefits:       benefitsArray,
       rewardPoints:   Number(formData.rewardPoints) || 0,
       cashbackEarned: Number(formData.cashbackEarned) || 0,
+      imageUrl:       formData.cardImageUrl.trim(),
       cardImageUrl:   formData.cardImageUrl.trim(),
       difficulty:     formData.difficulty,
       xpValue:        Number(formData.xpValue) || DIFFICULTY_XP[formData.difficulty] || 100,
@@ -251,12 +254,13 @@ const CreditCardTracker = () => {
       if (isNew && ["active", "approved"].includes(formData.status)) {
         await awardXp(payload);
       }
+      setSaving(false);
+      closeModal();
     } catch (err) {
       console.error("Save card error:", err);
+      alert("Error saving credit card: " + (err.message || err));
+      setSaving(false);
     }
-
-    setSaving(false);
-    closeModal();
   };
 
   const handleDelete = async () => {

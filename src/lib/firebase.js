@@ -17,19 +17,20 @@ export const ADMIN_UID = import.meta.env.VITE_ADMIN_UID || "";
 const app = initializeApp(firebaseConfig);
 
 // ── Firebase App Check (reCAPTCHA Enterprise) ─────────────────────────────────
-// In development (localhost), enable the debug token so App Check doesn't
-// block local testing. The debug token is logged to the browser console —
-// add it to the Firebase Console under App Check → Apps → Manage debug tokens.
-if (import.meta.env.DEV) {
+if (typeof window !== "undefined" && (import.meta.env.DEV || window.location.hostname === "localhost" || window.location.search.includes("debug_token"))) {
   self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
 }
 
 const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
-if (recaptchaSiteKey) {
-  initializeAppCheck(app, {
-    provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey),
-    isTokenAutoRefreshEnabled: true,
-  });
+if (recaptchaSiteKey && typeof window !== "undefined") {
+  try {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey),
+      isTokenAutoRefreshEnabled: true,
+    });
+  } catch (err) {
+    console.warn("Firebase App Check initialization failed:", err);
+  }
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
