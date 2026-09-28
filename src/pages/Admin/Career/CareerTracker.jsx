@@ -17,6 +17,7 @@ import {
   evaluateUnlockedBadges,
   DIFFICULTY_XP,
 } from "../../../lib/gamification";
+import cache from "../../../lib/cache";
 import "./CareerTracker.css";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -226,6 +227,7 @@ const CareerTracker = () => {
 
     try {
       await setDoc(doc(db, "careerGoals", itemId), payload, { merge: true });
+      cache.clear("topic-career");
     } catch (err) {
       console.error("Save career item error:", err);
     }
@@ -302,7 +304,10 @@ const CareerTracker = () => {
   // ── Delete ────────────────────────────────────────────────────────────────
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    try { await deleteDoc(doc(db, "careerGoals", deleteTarget.id)); } catch (err) { console.error(err); }
+    try {
+      await deleteDoc(doc(db, "careerGoals", deleteTarget.id));
+      cache.clear("topic-career");
+    } catch (err) { console.error(err); }
     setDeleteTarget(null);
   };
 
@@ -310,6 +315,7 @@ const CareerTracker = () => {
   const togglePublic = async (item) => {
     try {
       await updateDoc(doc(db, "careerGoals", item.id), { isPublic: !item.isPublic, updatedAt: serverTimestamp() });
+      cache.clear("topic-career");
     } catch (err) { console.warn(err); }
   };
 

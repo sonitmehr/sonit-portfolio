@@ -200,17 +200,18 @@ export default function TopicPage({ slug: propSlug }) {
       setLoading(true);
       setNotFound(false);
 
-      // ── Check cache first ──────────────────────────────────────────────────
+      // ── Check cache first (show immediately, then revalidate in background) ──
       const cachedPayload = cache.get(`topic-${slug}`);
       if (cachedPayload) {
-        const { config, items: cachedItems } = cachedPayload;
-        setPageConfig(config);
-        setItems(cachedItems);
-        document.title = `${config.title || slug} — Sonit Mehrotra`;
-        const metaDesc = document.querySelector("meta[name='description']");
-        if (metaDesc) metaDesc.setAttribute("content", config.seoDescription || config.description || "");
+        const { config: cachedConfig, items: cachedItems } = cachedPayload;
+        if (cachedConfig) setPageConfig(cachedConfig);
+        if (cachedItems) setItems(cachedItems);
+        if (cachedConfig) {
+          document.title = `${cachedConfig.title || slug} — Sonit Mehrotra`;
+          const metaDesc = document.querySelector("meta[name='description']");
+          if (metaDesc) metaDesc.setAttribute("content", cachedConfig.seoDescription || cachedConfig.description || "");
+        }
         setLoading(false);
-        return;
       }
       // ──────────────────────────────────────────────────────────────────────
 

@@ -10,13 +10,37 @@
 
 const PREFIX = "sonit_cache_";
 
+const isDev = Boolean(
+  import.meta.env.DEV ||
+  (typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" ||
+     window.location.hostname === "127.0.0.1" ||
+     window.location.hostname === "::1"))
+);
+
+// If running locally, purge any stale cache entries from previous sessions
+if (isDev && typeof window !== "undefined") {
+  try {
+    const toRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith(PREFIX) || k === "explore_more_config")) {
+        toRemove.push(k);
+      }
+    }
+    toRemove.forEach((k) => localStorage.removeItem(k));
+  } catch (_) {}
+}
+
 /**
  * Write a value to localStorage with an expiry timestamp.
+ * In dev/localhost, this is a no-op to keep testing live.
  * @param {string} key
  * @param {*} value  — must be JSON-serialisable
  * @param {number} ttlMs — time-to-live in milliseconds (default 1 hour)
  */
 export function set(key, value, ttlMs = 60 * 60 * 1000) {
+  if (isDev) return;
   try {
     const payload = {
       value,
@@ -30,11 +54,12 @@ export function set(key, value, ttlMs = 60 * 60 * 1000) {
 }
 
 /**
- * Read a cached value. Returns null if the key doesn't exist or has expired.
+ * Read a cached value. Returns null if in dev/localhost, expired, or missing.
  * @param {string} key
  * @returns {*|null}
  */
 export function get(key) {
+  if (isDev) return null;
   try {
     const raw = localStorage.getItem(PREFIX + key);
     if (!raw) return null;
@@ -85,7 +110,7 @@ export function clearAll() {
     const toRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (k && k.startsWith(PREFIX)) toRemove.push(k);
+      if (k && (k.startsWith(PREFIX) || k === "explore_more_config")) toRemove.push(k);
     }
     toRemove.forEach((k) => localStorage.removeItem(k));
   } catch (_) {}

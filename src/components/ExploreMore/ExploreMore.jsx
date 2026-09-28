@@ -84,18 +84,27 @@ function ExploreMore() {
 
   useEffect(() => {
     const loadRoutes = async () => {
-      // Check localStorage cache
-      try {
-        const cached = localStorage.getItem(CACHE_KEY);
-        if (cached) {
-          const { data, timestamp } = JSON.parse(cached);
-          if (Date.now() - timestamp < CACHE_TTL) {
-            setRoutes(data);
-            setLoading(false);
-            return;
+      // Check localStorage cache (bypassed on localhost / dev)
+      const isDev = Boolean(
+        import.meta.env.DEV ||
+        (typeof window !== "undefined" &&
+          (window.location.hostname === "localhost" ||
+           window.location.hostname === "127.0.0.1" ||
+           window.location.hostname === "::1"))
+      );
+      if (!isDev) {
+        try {
+          const cached = localStorage.getItem(CACHE_KEY);
+          if (cached) {
+            const { data, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp < CACHE_TTL) {
+              setRoutes(data);
+              setLoading(false);
+              return;
+            }
           }
-        }
-      } catch (_) {}
+        } catch (_) {}
+      }
 
       // Fetch from Firestore
       try {

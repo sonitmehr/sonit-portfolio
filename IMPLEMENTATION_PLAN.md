@@ -997,15 +997,38 @@ sonit-portfolio/
 - [x] Budget alert setup in Google Cloud Console — $5/month alert configured
 - [x] `index.html` inline Firebase script — already clean, no inline scripts present
 
-### [PENDING STAGE — Post-MVP / Upon Blaze Upgrade]
-- **Firebase Storage Direct Uploads:**
-  - Enable Firebase Storage in Console & deploy `storage.rules`
-  - Implement `ImageUpload` drag-and-drop / camera upload component
-- **Cloud Functions for Gaming Automated Sync (Steam & PSN):**
-  - Scheduled Monthly Cron function (`syncSteamGames`): queries Steam Web API for owned games, playtime, and achievements, upserting directly to `gamingProgress/{steamAppId}`
-  - Scheduled Monthly Cron function (`syncPSNGames`): authenticates via refreshed NPSSO token, queries PSN titles and trophy milestones, upserting directly to `gamingProgress/{psnTitleId}`
-  - On-Demand Admin HTTPS Callable (`triggerGamingSync`): allows manual trigger of Cloud Functions sync from any device
-  - *(Note: Local development currently features active Vite Dev Proxy sync at `/api/steam/games` allowing one-click sync directly from the Admin UI)*
+### [COMPLETED — Blaze Plan Implemented]
+- **Firebase Storage Direct Uploads:** ✅
+  - `storage.rules` created — admin-only writes, public reads, 10 MB image limit
+  - `src/lib/storage.js` — `uploadImage()` (with progress callback) + `deleteImage()` helpers
+  - `src/components/ImageUpload/ImageUpload.jsx` — drag-and-drop / click-to-browse / camera capture, with progress overlay and replace/remove actions
+  - `src/lib/firebase.js` — added `getStorage` export
+- **Cloud Functions for Gaming Automated Sync (Steam & PSN):** ✅
+  - `functions/package.json` — Node 20, `firebase-functions` v6, `firebase-admin`, `psn-api`, `node-fetch`
+  - `functions/.env` — secrets (Steam key/ID, PSN NPSSO, Admin UID) — gitignored
+  - `functions/index.js` — all 3 functions implemented:
+    - `syncSteamGames` — Scheduled Monthly Cron (1st of month, 21:00 UTC), fetches owned games + achievements, upserts with merge
+    - `syncPSNGames` — Scheduled Monthly Cron (1st of month, 21:30 UTC), authenticates via NPSSO, fetches all titles + trophy data, upserts with merge
+    - `triggerGamingSync` — HTTPS Callable (admin-only), supports `platform: 'steam' | 'psn' | 'both'`, 9-minute timeout
+  - `firebase.json` — updated with `functions` + `storage` config blocks
+  - `src/pages/Admin/Gaming/GamingTracker.jsx` — "☁️ Sync via Cloud" button added via `httpsCallable`, shows result banner with per-platform synced count
+  - Local Vite proxy (`/api/steam/games`) preserved for `npm run dev` development workflow
+
+### [DEPLOYMENT STEPS — Run these to go live]
+```bash
+# 1. Deploy storage rules
+npx firebase-tools deploy --only storage
+
+# 2. Deploy Firestore rules (if updated)
+npx firebase-tools deploy --only firestore:rules
+
+# 3. Deploy Cloud Functions (first deploy ~3-5 mins)
+npx firebase-tools deploy --only functions
+
+# 4. Build & deploy frontend hosting
+npm run build
+npx firebase-tools deploy --only hosting
+```
 
 ---
 

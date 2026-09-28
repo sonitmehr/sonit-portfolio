@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 
 const firebaseConfig = {
@@ -16,9 +17,21 @@ export const ADMIN_UID = import.meta.env.VITE_ADMIN_UID || "";
 
 const app = initializeApp(firebaseConfig);
 
-// ── Firebase App Check (reCAPTCHA Enterprise) ─────────────────────────────────
-if (typeof window !== "undefined" && (import.meta.env.DEV || window.location.hostname === "localhost" || window.location.search.includes("debug_token"))) {
-  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+const databaseId = import.meta.env.VITE_FIRESTORE_DATABASE_ID;
+
+export const auth    = getAuth(app);
+export const db      = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
+export const storage = getStorage(app);
+
+if (databaseId) {
+  console.info(`📦 Connected to Firestore named database: "${databaseId}"`);
+}
+
+// ── Firebase App Check (reCAPTCHA Enterprise) ──────────────────────────────
+// In dev/localhost, use the explicit debug token registered in Firebase Console.
+if (typeof window !== "undefined" && (import.meta.env.DEV || window.location.hostname === "localhost")) {
+  const debugToken = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN;
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken || true;
 }
 
 const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
@@ -32,9 +45,6 @@ if (recaptchaSiteKey && typeof window !== "undefined") {
     console.warn("Firebase App Check initialization failed:", err);
   }
 }
-// ─────────────────────────────────────────────────────────────────────────────
-
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+// ───────────────────────────────────────────────────────────────────────────
 
 export default app;

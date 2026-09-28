@@ -1,5 +1,229 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import {
+  exchangeNpssoForCode,
+  exchangeCodeForAccessToken,
+  getUserTitles,
+  getUserPlayedGames,
+} from 'psn-api';
+
+function parsePlayDuration(durationStr) {
+  if (!durationStr) return { hours: 0, minutes: 0 };
+  const h = (durationStr.match(/(\d+)H/) || [])[1] || 0;
+  const m = (durationStr.match(/(\d+)M/) || [])[1] || 0;
+  const hours = parseInt(h, 10);
+  const minutes = parseInt(m, 10);
+  return {
+    hours: Math.round((hours + minutes / 60) * 10) / 10,
+    minutes: hours * 60 + minutes,
+  };
+}
+
+function normalizeTitle(str) {
+  return (str || '')
+    .toLowerCase()
+    .replace(/[™®©]/g, '')
+    .replace(/[:\-–—]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Custom Vite Plugin for Local PSN Sync Proxy
+ * Bridges between local frontend and PlayStation Network API with playtime and trophies
+ */
+function psnSyncPlugin(env) {
+  return {
+    name: 'psn-sync-plugin',
+    configureServer(server) {
+      server.middlewares.use('/api/psn/games', async (req, res, next) => {
+        if (req.method !== 'GET' && req.method !== 'POST') {
+          return next();
+        }
+
+        const npsso = env.PSN_NPSSO || process.env.PSN_NPSSO;
+
+        if (!npsso) {
+          res.statusCode = 400;
+          res.setHeader('Content-Type', 'application/json');
+          return res.end(
+            JSON.stringify({
+              error: 'Missing PSN_NPSSO in .env'
+            })
+          );
+        }
+
+        try {
+          // 1. Authenticate
+          const code = await exchangeNpssoForCode(npsso);
+          const auth = await exchangeCodeForAccessToken(code);
+
+          // 2. Fetch played games (contains exact playtime & durations) and trophy titles in parallel
+          const [playedRes, titlesRes] = await Promise.all([
+            getUserPlayedGames({ accessToken: auth.accessToken }, 'me', { limit: 100 }).catch((e) => {
+              console.warn('[PSN Proxy] getUserPlayedGames error:', e.message);
+              return { titles: [] };
+            }),
+            getUserTitles({ accessToken: auth.accessToken }, 'me', { limit: 100 }).catch((e) => {
+              console.warn('[PSN Proxy] getUserTitles error:', e.message);
+              return { trophyTitles: [] };
+            }),
+          ]);
+
+          const playedTitles = playedRes.titles || [];
+          const trophyTitles = titlesRes.trophyTitles || [];
+
+          // 3. Build lookup map from played games (playtime, playCount, categories, dates)
+          const playMap = new Map();
+          for (const item of playedTitles) {
+            const parsed = parsePlayDuration(item.playDuration);
+            const norm = normalizeTitle(item.name || item.localizedName);
+            playMap.set(norm, {
+              playtimeHours: parsed.hours,
+              playtimeMinutes: parsed.minutes,
+              playCount: item.playCount || 0,
+              firstPlayed: item.firstPlayedDateTime || null,
+              lastPlayed: item.lastPlayedDateTime || null,
+              category: item.category || "",
+              imageUrl: item.imageUrl || item.localizedImageUrl || "",
+              genres: item.concept?.genres?.join(", ") || "",
+            });
+          }
+
+          // 4. Build game objects merging trophies and playtime
+          const processedNorms = new Set();
+          const games = [];
+
+          for (const title of trophyTitles) {
+            const norm = normalizeTitle(title.trophyTitleName);
+            processedNorms.add(norm);
+
+            const playInfo = playMap.get(norm) || {};
+            const earned = title.earnedTrophies || { platinum: 0, gold: 0, silver: 0, bronze: 0 };
+            const defined = title.definedTrophies || { platinum: 0, gold: 0, silver: 0, bronze: 0 };
+
+            const platinum = defined.platinum || 0;
+            const gold = defined.gold || 0;
+            const silver = defined.silver || 0;
+            const bronze = defined.bronze || 0;
+
+            const earnedPlatinum = earned.platinum || 0;
+            const earnedGold = earned.gold || 0;
+            const earnedSilver = earned.silver || 0;
+            const earnedBronze = earned.bronze || 0;
+
+            const totalTrophies = platinum + gold + silver + bronze;
+            const earnedTrophies = earnedPlatinum + earnedGold + earnedSilver + earnedBronze;
+            const hours = playInfo.playtimeHours || 0;
+
+            let status = "not_started";
+            if (earnedPlatinum > 0 || (totalTrophies > 0 && earnedTrophies === totalTrophies)) {
+              status = "completed";
+            } else if (earnedTrophies > 0 || hours > 0) {
+              status = "in_progress";
+            }
+
+            let difficulty = "moderate";
+            let xpValue = 100;
+            if (hours >= 50 || earnedTrophies >= 50) {
+              difficulty = "epic";
+              xpValue = 500;
+            } else if (hours >= 20 || earnedTrophies >= 20) {
+              difficulty = "challenging";
+              xpValue = 250;
+            } else if (hours <= 5 && earnedTrophies <= 5) {
+              difficulty = "casual";
+              xpValue = 50;
+            }
+
+            games.push({
+              id: `psn_${title.npCommunicationId}`,
+              psnCommunicationId: title.npCommunicationId,
+              title: title.trophyTitleName,
+              platform: "psn",
+              genre: playInfo.genres || "",
+              playtimeHours: hours,
+              playtimeMinutes: playInfo.playtimeMinutes || hours * 60,
+              playCount: playInfo.playCount || 0,
+              coverArtUrl: title.trophyTitleIconUrl || playInfo.imageUrl || "",
+              status,
+              priority: (hours >= 20 || earnedTrophies >= 20) ? "high" : "medium",
+              difficulty,
+              xpValue,
+              achievementsTotal: totalTrophies,
+              achievementsUnlocked: earnedTrophies,
+              trophies: {
+                platinum: earnedPlatinum,
+                gold: earnedGold,
+                silver: earnedSilver,
+                bronze: earnedBronze,
+              },
+              trophyTotals: { platinum, gold, silver, bronze },
+              rating: null,
+              personalNotes: "",
+              isPublic: false,
+            });
+          }
+
+          // Also add played titles that might not have trophy sets (e.g. apps/previews)
+          for (const item of playedTitles) {
+            const norm = normalizeTitle(item.name || item.localizedName);
+            if (!processedNorms.has(norm)) {
+              processedNorms.add(norm);
+              const parsed = parsePlayDuration(item.playDuration);
+              if (parsed.hours > 0) {
+                games.push({
+                  id: `psn_${item.titleId}`,
+                  psnCommunicationId: item.titleId,
+                  title: item.name || item.localizedName,
+                  platform: "psn",
+                  genre: item.concept?.genres?.join(", ") || "",
+                  playtimeHours: parsed.hours,
+                  playtimeMinutes: parsed.minutes,
+                  playCount: item.playCount || 0,
+                  coverArtUrl: item.imageUrl || item.localizedImageUrl || "",
+                  status: "in_progress",
+                  priority: parsed.hours >= 20 ? "high" : "medium",
+                  difficulty: parsed.hours >= 50 ? "epic" : parsed.hours >= 20 ? "challenging" : "casual",
+                  xpValue: parsed.hours >= 50 ? 500 : parsed.hours >= 20 ? 250 : 50,
+                  achievementsTotal: 0,
+                  achievementsUnlocked: 0,
+                  trophies: { platinum: 0, gold: 0, silver: 0, bronze: 0 },
+                  trophyTotals: { platinum: 0, gold: 0, silver: 0, bronze: 0 },
+                  rating: null,
+                  personalNotes: "",
+                  isPublic: false,
+                });
+              }
+            }
+          }
+
+          // Sort by playtime descending, then by trophies unlocked
+          games.sort((a, b) => b.playtimeHours - a.playtimeHours || b.achievementsUnlocked - a.achievementsUnlocked);
+
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(
+            JSON.stringify({
+              success: true,
+              count: games.length,
+              games,
+            })
+          );
+        } catch (err) {
+          console.error('PSN sync proxy error:', err);
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(
+            JSON.stringify({
+              error: err.message || 'Failed to fetch PSN games'
+            })
+          );
+        }
+      });
+    }
+  };
+}
 
 /**
  * Custom Vite Plugin for Local Steam Sync Proxy
@@ -133,6 +357,6 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    plugins: [react(), steamSyncPlugin(env)],
+    plugins: [react(), steamSyncPlugin(env), psnSyncPlugin(env)],
   };
 });

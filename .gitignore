@@ -6,13 +6,16 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-firebase.json
 node_modules
 dist
 dist-ssr
 *.local
 .env
 .env*.local
+
+# Cloud Functions secrets & deps
+functions/.env
+functions/node_modules
 
 # Editor directories and files
 .firebase

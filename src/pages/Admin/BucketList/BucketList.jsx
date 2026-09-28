@@ -16,6 +16,7 @@ import {
   evaluateUnlockedBadges, 
   DIFFICULTY_XP 
 } from "../../../lib/gamification";
+import cache from "../../../lib/cache";
 import "./BucketList.css";
 
 const DEFAULT_CATEGORIES = [
@@ -214,6 +215,7 @@ const BucketList = () => {
 
     try {
       await setDoc(doc(db, "publicShowcase", itemId), showcasePayload, { merge: true });
+      cache.clearByPrefix("topic-");
     } catch (e) {
       console.warn("Could not sync to publicShowcase:", e);
     }
@@ -222,6 +224,7 @@ const BucketList = () => {
   // Delete Item
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
+    cache.clearByPrefix("topic-");
 
     const { id, isCompleted, xpValue, category, isPublic } = deleteTarget;
 

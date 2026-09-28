@@ -10,13 +10,17 @@ import {
   serverTimestamp,
   writeBatch,
 } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { db } from "../../../lib/firebase";
+import app from "../../../lib/firebase";
 import {
   calculateLevelInfo,
   evaluateUnlockedBadges,
   DIFFICULTY_XP,
 } from "../../../lib/gamification";
+import cache from "../../../lib/cache";
 import "./GamingTracker.css";
+
 
 // ─── Constants & Metadata ───────────────────────────────────────────────────
 
@@ -205,8 +209,17 @@ const GamingTracker = () => {
   const [selectedSteamIds, setSelectedSteamIds]   = useState(new Set());
   const [onlyPlayed, setOnlyPlayed]               = useState(true);
   const [importingSteam, setImportingSteam]       = useState(false);
+  const [psnModalOpen, setPsnModalOpen]           = useState(false);
+  const [psnLoading, setPsnLoading]               = useState(false);
+  const [psnError, setPsnError]                   = useState(null);
+  const [psnGames, setPsnGames]                   = useState([]);
+  const [selectedPsnIds, setSelectedPsnIds]       = useState(new Set());
+  const [onlyEarnedPsn, setOnlyEarnedPsn]         = useState(true);
+  const [importingPsn, setImportingPsn]           = useState(false);
   const [selectedGameIds, setSelectedGameIds]     = useState(new Set());
   const [bulkApplying, setBulkApplying]           = useState(false);
+  const [cloudSyncing, setCloudSyncing]           = useState(false);  // Cloud Function sync state
+  const [cloudSyncResult, setCloudSyncResult]     = useState(null);   // { steam, psn } results
 
   // Real-time Firestore sync
   useEffect(() => {
@@ -383,6 +396,7 @@ const GamingTracker = () => {
         { isPublic: nextPublic },
         { merge: true }
       );
+      cache.clear("topic-gaming");
     } catch (err) {
       console.error("Public toggle error:", err);
     }
@@ -463,6 +477,7 @@ const GamingTracker = () => {
         });
         await batch.commit();
       }
+      cache.clear("topic-gaming");
 
       // 3. XP & Notifications
       if (field === "status" && value === "completed") {
@@ -611,6 +626,7 @@ const GamingTracker = () => {
       }
 
       await setDoc(doc(db, "gamingProgress", id), payload, { merge: true });
+      cache.clear("topic-gaming");
 
       // Handle XP award / rollback if status changed
       if (!editingGame && formData.status === "completed") {
@@ -637,6 +653,7 @@ const GamingTracker = () => {
     if (!deleteTarget) return;
     try {
       await deleteDoc(doc(db, "gamingProgress", deleteTarget.id));
+      cache.clear("topic-gaming");
       if (deleteTarget.status === "completed") {
         await rollbackGamingXp(deleteTarget);
       }
@@ -669,6 +686,37 @@ const GamingTracker = () => {
       console.error("Error seeding sample games:", err);
     } finally {
       setSeeding(false);
+    }
+  };
+
+  // ─── Cloud Function Gaming Sync (Production) ──────────────────────────────
+
+  const handleCloudSync = async (platform = "both") => {
+    setCloudSyncing(true);
+    setCloudSyncResult(null);
+    try {
+      const functions = getFunctions(app, "us-central1");
+      const triggerGamingSync = httpsCallable(functions, "triggerGamingSync", {
+        timeout: 540000, // 9 minutes
+      });
+      const result = await triggerGamingSync({ platform });
+      setCloudSyncResult(result.data?.results || {});
+      triggerConfetti();
+      const steamCount = result.data?.results?.steam?.synced || 0;
+      const psnCount   = result.data?.results?.psn?.synced   || 0;
+      const total = steamCount + psnCount;
+      setXpToast({ xp: total * 50, title: `${total} Games Synced via Cloud ☁️` });
+      setTimeout(() => setXpToast(null), 4000);
+    } catch (err) {
+      console.error("Cloud sync error:", err);
+      setSteamError(
+        err?.message?.includes("permission-denied")
+          ? "Permission denied — make sure you are logged in as admin."
+          : `Cloud sync failed: ${err.message || "Unknown error"}`
+      );
+      setSteamModalOpen(true); // reuse error modal to show the message
+    } finally {
+      setCloudSyncing(false);
     }
   };
 
@@ -754,6 +802,7 @@ const GamingTracker = () => {
       }
 
       triggerConfetti();
+      cache.clear("topic-gaming");
       setXpToast({ xp: toImport.length * 50, title: `${toImport.length} Steam Games Synced` });
       setTimeout(() => setXpToast(null), 3500);
       setSteamModalOpen(false);
@@ -768,6 +817,102 @@ const GamingTracker = () => {
   const displayedSteamGames = onlyPlayed
     ? steamGames.filter((g) => g.playtimeHours > 0)
     : steamGames;
+
+  // ─── PSN Library Sync via Local Vite Proxy ────────────────────────────────
+
+  const handleOpenPsnSync = async () => {
+    setPsnModalOpen(true);
+    setPsnLoading(true);
+    setPsnError(null);
+    try {
+      const res = await fetch("/api/psn/games");
+      const contentType = res.headers.get("content-type") || "";
+      if (!res.ok || !contentType.includes("application/json")) {
+        throw new Error(
+          "PSN sync proxy is only available during local development (`npm run dev`)."
+        );
+      }
+      const data = await res.json();
+      const fetched = data.games || [];
+      setPsnGames(fetched);
+
+      // By default select all games with playtime > 0 or achievementsUnlocked > 0
+      const playedIds = new Set(
+        fetched.filter((g) => g.playtimeHours > 0 || g.achievementsUnlocked > 0).map((g) => g.psnCommunicationId)
+      );
+      setSelectedPsnIds(playedIds);
+    } catch (err) {
+      console.error("PSN sync error:", err);
+      setPsnError(err.message || "Failed to connect to local PSN proxy.");
+    } finally {
+      setPsnLoading(false);
+    }
+  };
+
+  const toggleSelectPsn = (commId) => {
+    setSelectedPsnIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(commId)) next.delete(commId);
+      else next.add(commId);
+      return next;
+    });
+  };
+
+  const handleToggleSelectAllPsn = (selectAll) => {
+    const currentList = onlyEarnedPsn ? psnGames.filter((g) => g.playtimeHours > 0 || g.achievementsUnlocked > 0) : psnGames;
+    if (selectAll) {
+      setSelectedPsnIds(new Set(currentList.map((g) => g.psnCommunicationId)));
+    } else {
+      setSelectedPsnIds(new Set());
+    }
+  };
+
+  const handleImportPsnGames = async () => {
+    const toImport = psnGames.filter((g) => selectedPsnIds.has(g.psnCommunicationId));
+    if (toImport.length === 0) return;
+
+    setImportingPsn(true);
+    try {
+      for (const game of toImport) {
+        const docId = `psn_${game.psnCommunicationId}`;
+        const payload = {
+          ...game,
+          id: docId,
+          updatedAt: serverTimestamp(),
+        };
+
+        const existing = games.find(
+          (g) => g.id === docId || (g.psnCommunicationId && g.psnCommunicationId === game.psnCommunicationId)
+        );
+        if (existing) {
+          payload.status = game.status || existing.status || payload.status;
+          payload.priority = existing.priority || payload.priority;
+          payload.isPublic = Boolean(existing.isPublic);
+          payload.personalNotes = existing.personalNotes || payload.personalNotes;
+          payload.rating = existing.rating ?? payload.rating;
+        } else {
+          payload.createdAt = serverTimestamp();
+        }
+
+        await setDoc(doc(db, "gamingProgress", docId), payload, { merge: true });
+      }
+
+      triggerConfetti();
+      cache.clear("topic-gaming");
+      setXpToast({ xp: toImport.length * 50, title: `${toImport.length} PlayStation Games Synced` });
+      setTimeout(() => setXpToast(null), 3500);
+      setPsnModalOpen(false);
+    } catch (err) {
+      console.error("Error importing PSN games:", err);
+      setPsnError(err.message || "Failed to save PlayStation games to database.");
+    } finally {
+      setImportingPsn(false);
+    }
+  };
+
+  const displayedPsnGames = onlyEarnedPsn
+    ? psnGames.filter((g) => g.playtimeHours > 0 || g.achievementsUnlocked > 0)
+    : psnGames;
 
   // ─── Derived Statistics ────────────────────────────────────────────────────
 
@@ -907,7 +1052,10 @@ const GamingTracker = () => {
         </div>
         <div className="gt-header-actions">
           <button className="gt-btn-steam" onClick={handleOpenSteamSync} title="Sync library directly from Steam">
-            <span className="gt-btn-icon">🎮</span> Sync Steam
+            <span className="gt-btn-icon">💻</span> Sync Steam
+          </button>
+          <button className="gt-btn-psn" onClick={handleOpenPsnSync} title="Sync trophies directly from PlayStation Network">
+            <span className="gt-btn-icon">🎮</span> Sync PSN
           </button>
           <button className="gt-btn-primary" onClick={openAddModal}>
             <span className="gt-btn-icon">+</span> Add Game
@@ -915,19 +1063,56 @@ const GamingTracker = () => {
         </div>
       </div>
 
-      {/* ── Notice Banner with Steam Sync ── */}
+      {/* ── Notice Banner with Sync Options ── */}
       <div className="gt-notice-card">
         <div className="gt-notice-icon">🎮</div>
         <div className="gt-notice-content">
-          <div className="gt-notice-title">Steam Auto-Sync Ready (Vite Proxy Active)</div>
+          <div className="gt-notice-title">Gaming Sync — Local Proxy + Cloud Functions ☁️</div>
           <div className="gt-notice-desc">
-            Your Steam API keys in <code>.env</code> are connected through the local Vite proxy. You can sync your library, playtimes, and cover art with one click.
+            <strong>Local dev:</strong> Use <em>Sync Steam (Local)</em> when running <code>npm run dev</code> on this machine.<br />
+            <strong>Production / any device:</strong> Use <em>Sync via Cloud ☁️</em> to trigger Steam + PSN sync from anywhere.
           </div>
         </div>
-        <button className="gt-btn-steam-sm" onClick={handleOpenSteamSync}>
-          ⚡ Sync Steam Now
-        </button>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          <button className="gt-btn-steam-sm" onClick={handleOpenSteamSync} title="Local Vite proxy — only works during npm run dev">
+            💻 Sync Steam (Local)
+          </button>
+          <button className="gt-btn-psn-sm" onClick={handleOpenPsnSync} title="Local Vite proxy — only works during npm run dev">
+            🎮 Sync PSN (Local)
+          </button>
+          <button
+            className="gt-btn-cloud-sync"
+            onClick={() => handleCloudSync("both")}
+            disabled={cloudSyncing}
+            title="Triggers Cloud Functions — works from any device"
+          >
+            {cloudSyncing ? "⏳ Syncing…" : "☁️ Sync via Cloud"}
+          </button>
+        </div>
       </div>
+
+      {/* Cloud Sync Result Banner */}
+      {cloudSyncResult && (
+        <div className="gt-cloud-result-banner">
+          <span>☁️ Cloud Sync Complete —</span>
+          {cloudSyncResult.steam && !cloudSyncResult.steam.error && (
+            <span> 🎮 Steam: <strong>{cloudSyncResult.steam.synced}</strong> games</span>
+          )}
+          {cloudSyncResult.steam?.error && (
+            <span style={{ color: "#FF6B6B" }}> Steam error: {cloudSyncResult.steam.error}</span>
+          )}
+          {cloudSyncResult.psn && !cloudSyncResult.psn.error && (
+            <span> 🎮 PSN: <strong>{cloudSyncResult.psn.synced}</strong> titles</span>
+          )}
+          {cloudSyncResult.psn?.error && (
+            <span style={{ color: "#FF6B6B" }}> PSN error: {cloudSyncResult.psn.error}</span>
+          )}
+          <button
+            style={{ marginLeft: "auto", background: "none", border: "none", color: "rgba(255,255,255,0.5)", cursor: "pointer", fontSize: "18px" }}
+            onClick={() => setCloudSyncResult(null)}
+          >×</button>
+        </div>
+      )}
 
       {/* ── Summary Stats Cards ── */}
       <div className="gt-stats-grid">
@@ -1934,6 +2119,170 @@ const GamingTracker = () => {
                     {importingSteam
                       ? "Importing..."
                       : `Import ${selectedSteamIds.size} Games to Backlog`}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {/* ── PSN Sync Modal ── */}
+      {psnModalOpen && (
+        <div className="gt-overlay" onClick={() => !importingPsn && setPsnModalOpen(false)}>
+          <div className="gt-psn-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="gt-modal-header">
+              <div className="gt-psn-header-title">
+                <span className="gt-psn-logo-badge">🎮</span>
+                <div>
+                  <h2>Sync PlayStation Library</h2>
+                  <p className="gt-psn-header-sub">
+                    Direct integration via local proxy &bull; Connected via NPSSO
+                  </p>
+                </div>
+              </div>
+              <button
+                className="gt-modal-close"
+                onClick={() => !importingPsn && setPsnModalOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            {psnLoading ? (
+              <div className="gt-steam-loading">
+                <div className="gt-spinner" />
+                <p>Authenticating with PlayStation Network and fetching trophy lists...</p>
+              </div>
+            ) : psnError ? (
+              <div className="gt-steam-error-state">
+                <span className="gt-error-icon">⚠️</span>
+                <h3>PSN Sync Failed</h3>
+                <p>{psnError}</p>
+                <button className="gt-btn-secondary" onClick={handleOpenPsnSync}>
+                  Try Again
+                </button>
+              </div>
+            ) : (
+              <div className="gt-steam-body">
+                {/* Toolbar */}
+                <div className="gt-steam-toolbar">
+                  <label className="gt-steam-filter-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={onlyEarnedPsn}
+                      onChange={(e) => setOnlyEarnedPsn(e.target.checked)}
+                      className="gt-checkbox"
+                    />
+                    <span>Only show played titles (&gt; 0 hrs or trophies)</span>
+                  </label>
+
+                  <div className="gt-steam-select-actions">
+                    <span className="gt-steam-select-count">
+                      {selectedPsnIds.size} of {displayedPsnGames.length} selected
+                    </span>
+                    <button
+                      type="button"
+                      className="gt-link-btn"
+                      onClick={() => handleToggleSelectAllPsn(selectedPsnIds.size < displayedPsnGames.length)}
+                    >
+                      {selectedPsnIds.size === displayedPsnGames.length ? "Deselect All" : "Select All"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Games List */}
+                <div className="gt-steam-list">
+                  {displayedPsnGames.map((game) => {
+                    const isSelected = selectedPsnIds.has(game.psnCommunicationId);
+                    const alreadyInLibrary = games.some(
+                      (g) => g.id === `psn_${game.psnCommunicationId}` || g.psnCommunicationId === game.psnCommunicationId
+                    );
+
+                    return (
+                      <div
+                        key={game.psnCommunicationId}
+                        className={`gt-steam-item ${isSelected ? "selected" : ""}`}
+                        onClick={() => toggleSelectPsn(game.psnCommunicationId)}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {}}
+                          className="gt-checkbox"
+                        />
+                        <img
+                          src={game.coverArtUrl}
+                          alt={game.title}
+                          className="gt-steam-item-img"
+                          onError={(e) => {
+                            e.target.style.opacity = "0.2";
+                          }}
+                        />
+                        <div className="gt-steam-item-details">
+                          <div className="gt-steam-item-title-row">
+                            <span className="gt-steam-item-title">{game.title}</span>
+                            {alreadyInLibrary && (
+                              <span className="gt-steam-existing-pill">In Library</span>
+                            )}
+                          </div>
+                          <div className="gt-steam-item-meta" style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
+                            {game.playtimeHours > 0 && (
+                              <span className="gt-steam-playtime">
+                                ⏱️ {game.playtimeHours} hrs
+                              </span>
+                            )}
+                            {game.trophies?.platinum > 0 && (
+                              <span className="gt-trophy-pill" style={{ background: "rgba(0, 184, 148, 0.2)", color: "#00b894" }}>
+                                🏆 Platinum
+                              </span>
+                            )}
+                            {game.achievementsTotal > 0 && (
+                              <span
+                                className="gt-ach-pill"
+                                style={{
+                                  background: game.trophies?.platinum > 0 ? "rgba(255, 217, 61, 0.2)" : "rgba(78, 205, 196, 0.15)",
+                                  color: game.trophies?.platinum > 0 ? "#FFD93D" : "#4ECDC4",
+                                  fontSize: "11px",
+                                  padding: "2px 6px",
+                                  borderRadius: "4px",
+                                  fontWeight: "600",
+                                }}
+                              >
+                                🎯 {game.achievementsUnlocked} / {game.achievementsTotal} Trophies
+                              </span>
+                            )}
+                            <span style={{ fontSize: "11px", color: "rgba(255, 255, 255, 0.5)" }}>
+                              {game.trophies?.gold || 0}G • {game.trophies?.silver || 0}S • {game.trophies?.bronze || 0}B
+                            </span>
+                            <span className="gt-difficulty-pill">{game.difficulty}</span>
+                            <span className="gt-xp-pill">+{game.xpValue} XP</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Footer Actions */}
+                <div className="gt-steam-footer">
+                  <button
+                    type="button"
+                    className="gt-btn-secondary"
+                    onClick={() => setPsnModalOpen(false)}
+                    disabled={importingPsn}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="gt-btn-primary"
+                    style={{ background: "#0070d1", borderColor: "#0070d1" }}
+                    onClick={handleImportPsnGames}
+                    disabled={importingPsn || selectedPsnIds.size === 0}
+                  >
+                    {importingPsn
+                      ? "Importing..."
+                      : `Import ${selectedPsnIds.size} PSN Games to Library`}
                   </button>
                 </div>
               </div>

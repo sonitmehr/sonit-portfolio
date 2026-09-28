@@ -16,6 +16,7 @@ import {
   evaluateUnlockedBadges,
   DIFFICULTY_XP,
 } from "../../../lib/gamification";
+import cache from "../../../lib/cache";
 import "./CreditCardTracker.css";
 
 const NETWORK_OPTIONS = ["visa", "mastercard", "amex", "rupay", "diners"];
@@ -251,6 +252,7 @@ const CreditCardTracker = () => {
 
     try {
       await setDoc(doc(db, "creditCards", cardId), payload, { merge: true });
+      cache.clear("topic-credit-cards");
       if (isNew && ["active", "approved"].includes(formData.status)) {
         await awardXp(payload);
       }
@@ -267,6 +269,7 @@ const CreditCardTracker = () => {
     if (!deleteTarget) return;
     try {
       await deleteDoc(doc(db, "creditCards", deleteTarget.id));
+      cache.clear("topic-credit-cards");
     } catch (err) {
       console.error("Delete card error:", err);
     }
@@ -276,6 +279,7 @@ const CreditCardTracker = () => {
   const togglePublic = async (card) => {
     try {
       await updateDoc(doc(db, "creditCards", card.id), { isPublic: !card.isPublic, updatedAt: serverTimestamp() });
+      cache.clear("topic-credit-cards");
     } catch (err) {
       console.warn("Toggle public error:", err);
     }
