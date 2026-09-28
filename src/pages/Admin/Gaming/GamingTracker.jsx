@@ -39,18 +39,18 @@ const PLATFORM_MAP = PLATFORMS.reduce((acc, p) => {
 }, {});
 
 const STATUS_OPTIONS = [
-  { id: "all",         label: "All Games", icon: "📚" },
-  { id: "in_progress", label: "Playing",   icon: "🕹️", color: "#4ECDC4" },
-  { id: "completed",   label: "Completed", icon: "🏆", color: "#FFD93D" },
-  { id: "not_started", label: "Backlog",   icon: "⏳", color: "rgba(255,255,255,0.5)" },
-  { id: "abandoned",   label: "Shelved",   icon: "📦", color: "#FF6B6B" },
+  { id: "all",         label: "All Games",   icon: "📚" },
+  { id: "in_progress", label: "Playing Now", icon: "🕹️", color: "#4ECDC4" },
+  { id: "completed",   label: "Completed",   icon: "🏆", color: "#FFD93D" },
+  { id: "not_started", label: "Backlog",     icon: "⏳", color: "rgba(255,255,255,0.5)" },
 ];
 
 const STATUS_LABELS = {
-  not_started: { label: "Backlog",   color: "rgba(255,255,255,0.6)", bg: "rgba(255,255,255,0.08)", icon: "⏳" },
-  in_progress: { label: "Playing",   color: "#4ECDC4",               bg: "rgba(78,205,196,0.15)",   icon: "🕹️" },
-  completed:   { label: "Completed", color: "#FFD93D",               bg: "rgba(255,217,61,0.15)",   icon: "🏆" },
-  abandoned:   { label: "Shelved",   color: "#FF6B6B",               bg: "rgba(255,107,107,0.15)",  icon: "📦" },
+  not_started: { label: "Backlog",     color: "rgba(255,255,255,0.6)", bg: "rgba(255,255,255,0.08)", icon: "⏳" },
+  in_progress: { label: "Playing Now", color: "#4ECDC4",               bg: "rgba(78,205,196,0.15)",   icon: "🕹️" },
+  completed:   { label: "Completed",   color: "#FFD93D",               bg: "rgba(255,217,61,0.15)",   icon: "🏆" },
+  abandoned:   { label: "Backlog",     color: "#a29bfe",               bg: "rgba(162,155,254,0.15)",  icon: "📦" },
+  shelved:     { label: "Backlog",     color: "#a29bfe",               bg: "rgba(162,155,254,0.15)",  icon: "📦" },
 };
 
 const DIFFICULTY_OPTIONS = [
@@ -114,7 +114,7 @@ const SAMPLE_GAMES = [
     achievementsUnlocked: 42,
     trophies: { platinum: 1, gold: 3, silver: 14, bronze: 24 },
     rating: 10,
-    personalNotes: "Masterpiece. Conquered Malenia solo after 35 attempts.",
+    personalNotes: "Masterpiece. Platinum Malenia solo after 35 attempts.",
     isPublic: true,
   },
   {
@@ -262,7 +262,7 @@ const GamingTracker = () => {
       const activityEntry = {
         id: `act_${Date.now()}`,
         itemId: game.id || game.title,
-        title: `Conquered: ${game.title}`,
+        title: `Platinum: ${game.title}`,
         xpGained,
         date: new Date().toISOString(),
         category: "gaming",
@@ -331,7 +331,7 @@ const GamingTracker = () => {
           gaming: newGamingBreakdown,
         },
         recentActivity: (oldStats.recentActivity || []).filter(
-          (a) => a.title !== `Conquered: ${game.title}`
+          (a) => a.title !== `Platinum: ${game.title}` && a.title !== `Conquered: ${game.title}`
         ),
         updatedAt: serverTimestamp(),
       };
@@ -935,7 +935,13 @@ const GamingTracker = () => {
   const filteredGames = useMemo(() => {
     return games
       .filter((g) => {
-        if (activeStatusFilter !== "all" && g.status !== activeStatusFilter) return false;
+        if (activeStatusFilter !== "all") {
+          if (activeStatusFilter === "not_started" || activeStatusFilter === "abandoned") {
+            if (g.status !== "not_started" && g.status !== "abandoned" && g.status !== "shelved") return false;
+          } else if (g.status !== activeStatusFilter) {
+            return false;
+          }
+        }
         if (platformFilter !== "all" && g.platform !== platformFilter) return false;
         if (visibilityFilter === "public" && !g.isPublic) return false;
         if (visibilityFilter === "private" && g.isPublic) return false;
@@ -989,7 +995,7 @@ const GamingTracker = () => {
         <div className="gt-xp-toast">
           <span className="gt-xp-toast-icon">⚡</span>
           <div>
-            <span className="gt-xp-toast-xp">+{xpToast.xp} XP!</span> Conquered{" "}
+            <span className="gt-xp-toast-xp">+{xpToast.xp} XP!</span> Platinum{" "}
             <strong>{xpToast.title}</strong>
           </div>
         </div>
@@ -1128,7 +1134,7 @@ const GamingTracker = () => {
           <div className="gt-stat-icon" style={{ color: "#4ECDC4" }}>🕹️</div>
           <div className="gt-stat-content">
             <span className="gt-stat-value">{statsSummary.inProgress}</span>
-            <span className="gt-stat-label">Currently Playing</span>
+            <span className="gt-stat-label">Playing Now</span>
           </div>
         </div>
 
@@ -1139,7 +1145,7 @@ const GamingTracker = () => {
               <span className="gt-stat-value">{statsSummary.completed}</span>
               <span className="gt-stat-rate">({statsSummary.completionRate}%)</span>
             </div>
-            <span className="gt-stat-label">Conquered</span>
+            <span className="gt-stat-label">Platinum</span>
           </div>
         </div>
 
@@ -1170,7 +1176,9 @@ const GamingTracker = () => {
             const count =
               opt.id === "all"
                 ? games.length
-                : games.filter((g) => g.status === opt.id).length;
+                : opt.id === "not_started"
+                  ? games.filter((g) => g.status === "not_started" || g.status === "abandoned" || g.status === "shelved").length
+                  : games.filter((g) => g.status === opt.id).length;
             const isActive = activeStatusFilter === opt.id;
             return (
               <button
@@ -1529,7 +1537,7 @@ const GamingTracker = () => {
                         onClick={(e) => handleToggleComplete(game, e)}
                         title={isCompleted ? "Completed! Click to unmark" : "Mark as completed (+XP)"}
                       >
-                        {isCompleted ? "🏆 Conquered" : "Complete ✓"}
+                        {isCompleted ? "🏆 Platinum" : "Complete ✓"}
                       </button>
 
                       {/* Edit Button */}
@@ -1621,9 +1629,9 @@ const GamingTracker = () => {
                   className="gt-bulk-action-btn gt-bulk-playing"
                   onClick={() => handleBulkApply("status", "in_progress")}
                   disabled={bulkApplying}
-                  title="Mark selected games as In Progress / Playing"
+                  title="Mark selected games as Playing Now"
                 >
-                  🕹️ In Progress
+                  🕹️ Playing Now
                 </button>
                 <button
                   type="button"
@@ -1641,16 +1649,7 @@ const GamingTracker = () => {
                   disabled={bulkApplying}
                   title="Move selected games to Backlog"
                 >
-                  ⏳ Backlog
-                </button>
-                <button
-                  type="button"
-                  className="gt-bulk-action-btn gt-bulk-shelved"
-                  onClick={() => handleBulkApply("status", "abandoned")}
-                  disabled={bulkApplying}
-                  title="Move selected games to Shelved"
-                >
-                  📦 Shelved
+                  📦 Backlog
                 </button>
               </div>
             </div>
@@ -1753,10 +1752,10 @@ const GamingTracker = () => {
                     onChange={handleField}
                     className="gt-input"
                   >
-                    <option value="in_progress">🕹️ Playing / In Progress</option>
-                    <option value="completed">🏆 Completed / Conquered</option>
-                    <option value="not_started">⏳ Backlog / Not Started</option>
-                    <option value="abandoned">📦 Shelved / Abandoned</option>
+                    <option value="in_progress">🕹️ Playing Now</option>
+                    <option value="completed">🏆 Completed / Platinum</option>
+                    <option value="not_started">⏳ Backlog</option>
+                    <option value="abandoned">📦 Backlog (Archived)</option>
                   </select>
                 </div>
 

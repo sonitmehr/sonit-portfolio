@@ -34,25 +34,32 @@ const PLATFORM_LABELS = {
 };
 
 /* ── Status badge ── */
+/* ── Status badge ── */
 const STATUS_BADGES = {
   completed:    { label: "Completed",    color: "#00b894" },
-  in_progress:  { label: "In Progress",  color: "#fdcb6e" },
+  in_progress:  { label: "Playing Now",  color: "#4ECDC4" },
   todo:         { label: "To Do",        color: "#636e72" },
   proficient:   { label: "Proficient",   color: "#00b894" },
   learning:     { label: "Learning",     color: "#6c5ce7" },
-  not_started:  { label: "Not Started",  color: "#636e72" },
-  abandoned:    { label: "Shelved",      color: "#ff7675" },
-  shelved:      { label: "Shelved",      color: "#ff7675" },
+  not_started:  { label: "Backlog",      color: "#a29bfe" },
+  abandoned:    { label: "Backlog",      color: "#a29bfe" },
+  shelved:      { label: "Backlog",      color: "#a29bfe" },
 };
 
-function ItemCard({ item, index }) {
+function ItemCard({ item, index, isHighlighted = false }) {
   const statusBadge = STATUS_BADGES[item.status] || null;
+  const isPlaying = isHighlighted || item.status === "in_progress";
 
   return (
     <article
-      className="topic-item-card"
+      className={`topic-item-card ${isPlaying ? "topic-item-card-playing" : ""}`}
       style={{ "--fade-delay": `${index * 0.06}s` }}
     >
+      {isPlaying && (
+        <div className="topic-card-highlight-badge">
+          <span className="gaming-live-dot" /> Playing Now
+        </div>
+      )}
       {item.imageUrl && (
         <div className="topic-item-img-wrap">
           <img
@@ -424,7 +431,7 @@ export default function TopicPage({ slug: propSlug }) {
     let psnAchUnlocked = 0;
     let completedCount = 0;
     let inProgressCount = 0;
-    let shelvedCount = 0;
+    let backlogCount = 0;
     const trophies = { platinum: 0, gold: 0, silver: 0, bronze: 0 };
 
     items.forEach((item) => {
@@ -440,8 +447,8 @@ export default function TopicPage({ slug: propSlug }) {
         completedCount++;
       } else if (item.status === "in_progress") {
         inProgressCount++;
-      } else if (item.status === "abandoned" || item.status === "shelved") {
-        shelvedCount++;
+      } else {
+        backlogCount++;
       }
 
       const plat = (item.platform || "").toLowerCase();
@@ -475,7 +482,8 @@ export default function TopicPage({ slug: propSlug }) {
       totalGames: items.length,
       completedCount,
       inProgressCount,
-      shelvedCount,
+      backlogCount,
+      shelvedCount: backlogCount,
       totalHours,
       totalAch,
       totalAchUnlocked,
@@ -497,18 +505,20 @@ export default function TopicPage({ slug: propSlug }) {
     };
   }, [items, slug]);
 
-  /* ── Filtered & Sorted Items ── */
+  /* ── Filtered & Curated Gaming Items ── */
   const displayedItems = useMemo(() => {
     if (slug !== "gaming") return items;
 
     let list = [...items];
 
-    // Status filter (in_progress vs completed vs shelved)
+    // Status filter (in_progress vs completed vs backlog)
     if (gamingStatusFilter !== "all") {
       list = list.filter((it) => {
         if (gamingStatusFilter === "in_progress") return it.status === "in_progress";
         if (gamingStatusFilter === "completed") return it.status === "completed";
-        if (gamingStatusFilter === "abandoned") return it.status === "abandoned" || it.status === "shelved";
+        if (gamingStatusFilter === "backlog" || gamingStatusFilter === "abandoned") {
+          return it.status !== "in_progress" && it.status !== "completed";
+        }
         return true;
       });
     }
@@ -523,33 +533,29 @@ export default function TopicPage({ slug: propSlug }) {
       });
     }
 
+    // Fixed curated ranking: playtime descending, then achievements
     list.sort((a, b) => {
-      if (gamingSortBy === "playtime") {
-        const aMin = a.playtimeMinutes || (Number(a.playtimeHours) || 0) * 60;
-        const bMin = b.playtimeMinutes || (Number(b.playtimeHours) || 0) * 60;
-        return bMin - aMin;
-      }
-      if (gamingSortBy === "completion") {
-        const aRate = a.achievementsTotal > 0 ? a.achievementsUnlocked / a.achievementsTotal : 0;
-        const bRate = b.achievementsTotal > 0 ? b.achievementsUnlocked / b.achievementsTotal : 0;
-        return bRate - aRate;
-      }
-      if (gamingSortBy === "achievements") {
-        return (Number(b.achievementsUnlocked) || 0) - (Number(a.achievementsUnlocked) || 0);
-      }
-      if (gamingSortBy === "title") {
-        return (a.title || "").localeCompare(b.title || "");
-      }
-      if (gamingSortBy === "recent") {
-        const aTime = a.createdAt?.seconds || 0;
-        const bTime = b.createdAt?.seconds || 0;
-        return bTime - aTime;
-      }
-      return 0;
+      const aMin = a.playtimeMinutes || (Number(a.playtimeHours) || 0) * 60;
+      const bMin = b.playtimeMinutes || (Number(b.playtimeHours) || 0) * 60;
+      if (bMin !== aMin) return bMin - aMin;
+      return (Number(b.achievementsUnlocked) || 0) - (Number(a.achievementsUnlocked) || 0);
     });
 
     return list;
-  }, [items, slug, gamingPlatformFilter, gamingStatusFilter, gamingSortBy]);
+  }, [items, slug, gamingPlatformFilter, gamingStatusFilter]);
+
+  // Curated gaming tiers: 1. Playing Now -> 2. Completed -> 3. Backlog
+  const playingNowGames = useMemo(() => {
+    return displayedItems.filter((it) => it.status === "in_progress");
+  }, [displayedItems]);
+
+  const completedGames = useMemo(() => {
+    return displayedItems.filter((it) => it.status === "completed");
+  }, [displayedItems]);
+
+  const backlogGames = useMemo(() => {
+    return displayedItems.filter((it) => it.status !== "in_progress" && it.status !== "completed");
+  }, [displayedItems]);
 
   /* ── Loading ── */
   if (loading) {
@@ -635,7 +641,7 @@ export default function TopicPage({ slug: propSlug }) {
                     <span className="gaming-stat-value">{gamingStats.completionRate}%</span>
                     <span className="gaming-stat-label">Completion Rate</span>
                     <span className="gaming-stat-sub">
-                      {gamingStats.completedCount} / {gamingStats.totalGames} Conquered
+                      {gamingStats.completedCount} / {gamingStats.totalGames} Platinum
                     </span>
                   </div>
                 </div>
@@ -657,10 +663,10 @@ export default function TopicPage({ slug: propSlug }) {
                 </div>
               </div>
 
-              {/* Controls: Filter & Sort Bar */}
+              {/* Controls: Filter Bar (Sort removed to preserve curated display) */}
               <div id="gaming-hero-controls" className="gaming-controls-row">
                 <div className="gaming-filters-group">
-                  {/* Status Filter (In Progress / Completed) */}
+                  {/* Status Filter (Playing Now / Completed / Backlog) */}
                   <div className="gaming-filter-pills" role="group" aria-label="Status Filter">
                     <button
                       type="button"
@@ -674,7 +680,7 @@ export default function TopicPage({ slug: propSlug }) {
                       className={`gaming-pill-btn gaming-pill-in-progress ${gamingStatusFilter === "in_progress" ? "active" : ""}`}
                       onClick={() => setGamingStatusFilter("in_progress")}
                     >
-                      🕹️ In Progress ({gamingStats.inProgressCount})
+                      🕹️ Playing Now ({gamingStats.inProgressCount})
                     </button>
                     <button
                       type="button"
@@ -685,10 +691,10 @@ export default function TopicPage({ slug: propSlug }) {
                     </button>
                     <button
                       type="button"
-                      className={`gaming-pill-btn gaming-pill-shelved ${gamingStatusFilter === "abandoned" ? "active" : ""}`}
-                      onClick={() => setGamingStatusFilter("abandoned")}
+                      className={`gaming-pill-btn gaming-pill-shelved ${gamingStatusFilter === "backlog" || gamingStatusFilter === "abandoned" ? "active" : ""}`}
+                      onClick={() => setGamingStatusFilter("backlog")}
                     >
-                      📦 Shelved ({gamingStats.shelvedCount || 0})
+                      📦 Backlog ({gamingStats.backlogCount || 0})
                     </button>
                   </div>
 
@@ -718,24 +724,6 @@ export default function TopicPage({ slug: propSlug }) {
                       🎮 PlayStation ({gamingStats.psn.count})
                     </button>
                   </div>
-                </div>
-
-                <div className="gaming-sort-wrapper">
-                  <label className="gaming-sort-label" htmlFor="gaming-sort-select">
-                    Sort by:
-                  </label>
-                  <select
-                    id="gaming-sort-select"
-                    className="gaming-sort-dropdown"
-                    value={gamingSortBy}
-                    onChange={(e) => setGamingSortBy(e.target.value)}
-                  >
-                    <option value="playtime">⏱️ Most Played</option>
-                    <option value="completion">⚡ Completion %</option>
-                    <option value="achievements">🎯 Achievements</option>
-                    <option value="title">🔤 Title (A to Z)</option>
-                    <option value="recent">📅 Date Added</option>
-                  </select>
                 </div>
               </div>
             </div>
@@ -768,6 +756,74 @@ export default function TopicPage({ slug: propSlug }) {
               >
                 Reset Filters
               </button>
+            )}
+          </div>
+        ) : isGaming ? (
+          <div className="gaming-sections-container">
+            {/* 1. Playing Now (highlighted first, if any) */}
+            {playingNowGames.length > 0 && (
+              <section className="gaming-section gaming-section-playing">
+                <div className="gaming-section-header">
+                  <div className="gaming-section-title-wrap">
+                    <span className="gaming-section-badge playing-badge">
+                      <span className="gaming-live-dot" /> Playing Now
+                    </span>
+                    <h2 className="gaming-section-title">🕹️ Playing Now</h2>
+                  </div>
+                  <span className="gaming-section-count">
+                    {playingNowGames.length} {playingNowGames.length === 1 ? "game" : "games"}
+                  </span>
+                </div>
+                <div className="topic-grid gaming-grid-playing">
+                  {playingNowGames.map((item, i) => (
+                    <ItemCard key={item.id} item={item} index={i} isHighlighted={true} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* 2. Completed (with spacing below Playing Now, if any) */}
+            {completedGames.length > 0 && (
+              <section className="gaming-section gaming-section-completed">
+                <div className="gaming-section-header">
+                  <div className="gaming-section-title-wrap">
+                    <span className="gaming-section-badge completed-badge">
+                      🏆 Platinum / 100%
+                    </span>
+                    <h2 className="gaming-section-title">🏆 Completed</h2>
+                  </div>
+                  <span className="gaming-section-count">
+                    {completedGames.length} {completedGames.length === 1 ? "game" : "games"}
+                  </span>
+                </div>
+                <div className="topic-grid">
+                  {completedGames.map((item, i) => (
+                    <ItemCard key={item.id} item={item} index={i} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* 3. Backlog (lower most section, if any) */}
+            {backlogGames.length > 0 && (
+              <section className="gaming-section gaming-section-backlog">
+                <div className="gaming-section-header">
+                  <div className="gaming-section-title-wrap">
+                    <span className="gaming-section-badge backlog-badge">
+                      📦 Queue
+                    </span>
+                    <h2 className="gaming-section-title">📦 Backlog</h2>
+                  </div>
+                  <span className="gaming-section-count">
+                    {backlogGames.length} {backlogGames.length === 1 ? "game" : "games"}
+                  </span>
+                </div>
+                <div className="topic-grid gaming-grid-backlog">
+                  {backlogGames.map((item, i) => (
+                    <ItemCard key={item.id} item={item} index={i} />
+                  ))}
+                </div>
+              </section>
             )}
           </div>
         ) : (
