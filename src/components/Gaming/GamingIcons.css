@@ -1,0 +1,81 @@
+.gaming-icon-img {
+  display: inline-block;
+  vertical-align: middle;
+  object-fit: contain;
+  flex-shrink: 0;
+  user-select: none;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.trophy-icon-platinum {
+  filter: drop-shadow(0 1px 4px rgba(130, 204, 255, 0.5));
+}
+
+.trophy-icon-gold {
+  filter: drop-shadow(0 1px 4px rgba(255, 215, 0, 0.45));
+}
+
+.trophy-icon-silver {
+  filter: drop-shadow(0 1px 3px rgba(220, 230, 240, 0.35));
+}
+
+.trophy-icon-bronze {
+  filter: drop-shadow(0 1px 3px rgba(205, 127, 50, 0.35));
+}
+
+.steam-ribbon-icon {
+  filter: drop-shadow(0 2px 6px rgba(255, 195, 18, 0.6));
+}
+
+.steam-ribbon-icon:hover {
+  transform: scale(1.15) rotate(4deg);
+}
+
+.platform-icon-steam {
+  filter: drop-shadow(0 1px 3px rgba(27, 40, 56, 0.4));
+}
+
+.platform-icon-psn {
+  border-radius: 4px;
+}
+
+/* Badge helpers */
+.gaming-perfect-ribbon-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, rgba(255, 195, 18, 0.18), rgba(247, 159, 31, 0.08));
+  border: 1px solid rgba(255, 195, 18, 0.4);
+  color: #ffc048;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 3px 8px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(255, 195, 18, 0.15);
+}
+
+.gaming-platform-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e0e0e0;
+}
+
+.gaming-platform-tag.platform-steam {
+  background: rgba(27, 40, 56, 0.4);
+  border-color: rgba(102, 192, 244, 0.3);
+  color: #66c0f4;
+}
+
+.gaming-platform-tag.platform-psn {
+  background: rgba(0, 112, 209, 0.15);
+  border-color: rgba(0, 112, 209, 0.35);
+  color: #5bb3ff;
+}

@@ -11,6 +11,12 @@ import {
 import { db } from "../../../lib/firebase";
 import * as cache from "../../../lib/cache";
 import CreditCardShowcase from "./CreditCardShowcase";
+import {
+  TrophyIcon,
+  PlatformIcon,
+  SteamRibbonIcon,
+  GamingPlatformTag,
+} from "../../../components/Gaming/GamingIcons";
 import "./TopicPage.css";
 
 /* Cache TTL: 1 hour for public page data */
@@ -49,6 +55,8 @@ const STATUS_BADGES = {
 function ItemCard({ item, index, isHighlighted = false }) {
   const statusBadge = STATUS_BADGES[item.status] || null;
   const isPlaying = isHighlighted || item.status === "in_progress";
+  const normPlatform = String(item.platform || "").toLowerCase().trim();
+  const isPsn = normPlatform === "psn" || normPlatform === "playstation";
 
   return (
     <article
@@ -74,9 +82,12 @@ function ItemCard({ item, index, isHighlighted = false }) {
       <div className="topic-item-body">
         <div className="topic-item-meta">
           {item.platform && (
-            <span className="topic-item-platform">
-              {PLATFORM_ICONS[item.platform.toLowerCase()] || "🕹️"}{" "}
-              {PLATFORM_LABELS[item.platform.toLowerCase()] || item.platform}
+            <span className="topic-platform-logo-wrap" title={isPsn ? "PlayStation" : "Steam"}>
+              <PlatformIcon
+                platform={item.platform}
+                size={16}
+                variant={isPsn ? "white" : "default"}
+              />
             </span>
           )}
           {item.category &&
@@ -97,13 +108,27 @@ function ItemCard({ item, index, isHighlighted = false }) {
                 {item.category}
               </span>
             )}
-          {statusBadge && (
-            <span
-              className="topic-item-status"
-              style={{ color: statusBadge.color, borderColor: statusBadge.color + "44" }}
-            >
-              {statusBadge.label}
-            </span>
+          {/* Completed status: for PSN show platinum icon in place of "completed"; for Steam show ribbon without "Perfect" */}
+          {item.status === "completed" ? (
+            isPsn ? (
+              <span className="topic-status-icon-wrap" title="Platinum">
+                <TrophyIcon type="platinum" size={18} />
+              </span>
+            ) : (
+              <span className="topic-status-icon-wrap" title="100% Achievements Unlocked">
+                <SteamRibbonIcon size={18} />
+              </span>
+            )
+          ) : (
+            // For other statuses: only show if not playing now (to avoid repeating "Playing Now")
+            !isPlaying && statusBadge && (
+              <span
+                className="topic-item-status"
+                style={{ color: statusBadge.color, borderColor: statusBadge.color + "44" }}
+              >
+                {statusBadge.label}
+              </span>
+            )
           )}
         </div>
         <h3 className="topic-item-title">{item.title}</h3>
@@ -134,10 +159,26 @@ function ItemCard({ item, index, isHighlighted = false }) {
         {/* Trophy counts (for PSN / PlayStation) */}
         {item.trophies && (item.trophies.platinum || item.trophies.gold || item.trophies.silver || item.trophies.bronze) ? (
           <div className="topic-item-trophies">
-            {item.trophies.platinum > 0 && <span className="topic-trophy-item plat" title="Platinum">🏆 {item.trophies.platinum}</span>}
-            {item.trophies.gold > 0 && <span className="topic-trophy-item gold" title="Gold">🥇 {item.trophies.gold}</span>}
-            {item.trophies.silver > 0 && <span className="topic-trophy-item silver" title="Silver">🥈 {item.trophies.silver}</span>}
-            {item.trophies.bronze > 0 && <span className="topic-trophy-item bronze" title="Bronze">🥉 {item.trophies.bronze}</span>}
+            {item.trophies.platinum > 0 && (
+              <span className="topic-trophy-item plat" title="Platinum Trophy">
+                <TrophyIcon type="platinum" size={15} /> <span>{item.trophies.platinum}</span>
+              </span>
+            )}
+            {item.trophies.gold > 0 && (
+              <span className="topic-trophy-item gold" title="Gold Trophy">
+                <TrophyIcon type="gold" size={15} /> <span>{item.trophies.gold}</span>
+              </span>
+            )}
+            {item.trophies.silver > 0 && (
+              <span className="topic-trophy-item silver" title="Silver Trophy">
+                <TrophyIcon type="silver" size={15} /> <span>{item.trophies.silver}</span>
+              </span>
+            )}
+            {item.trophies.bronze > 0 && (
+              <span className="topic-trophy-item bronze" title="Bronze Trophy">
+                <TrophyIcon type="bronze" size={15} /> <span>{item.trophies.bronze}</span>
+              </span>
+            )}
           </div>
         ) : null}
         {/* Playtime */}
@@ -612,8 +653,14 @@ export default function TopicPage({ slug: propSlug }) {
                   <div className="gaming-stat-info">
                     <span className="gaming-stat-value">{gamingStats.totalHours} hrs</span>
                     <span className="gaming-stat-label">Total Playtime</span>
-                    <span className="gaming-stat-sub">
-                      Steam: {gamingStats.steam.hours}h • PSN: {gamingStats.psn.hours}h
+                    <span className="gaming-stat-sub" style={{ display: "inline-flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                        <PlatformIcon platform="steam" size={12} /> {gamingStats.steam.hours}h
+                      </span>
+                      <span>•</span>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                        <PlatformIcon platform="psn" size={12} /> {gamingStats.psn.hours}h
+                      </span>
                     </span>
                   </div>
                 </div>
@@ -647,15 +694,23 @@ export default function TopicPage({ slug: propSlug }) {
                 </div>
 
                 <div className="gaming-stat-card">
-                  <div className="gaming-stat-icon">🎮</div>
+                  <div className="gaming-stat-icon">
+                    <PlatformIcon platform="psn" size={24} />
+                  </div>
                   <div className="gaming-stat-info">
                     <span className="gaming-stat-value">{gamingStats.totalGames} Games</span>
                     <span className="gaming-stat-label">Platforms & Trophies</span>
-                    <span className="gaming-stat-sub">
-                      Steam: {gamingStats.steam.count} • PSN: {gamingStats.psn.count}
+                    <span className="gaming-stat-sub" style={{ display: "inline-flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                        <PlatformIcon platform="steam" size={12} /> {gamingStats.steam.count}
+                      </span>
+                      <span>•</span>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                        <PlatformIcon platform="psn" size={12} /> {gamingStats.psn.count}
+                      </span>
                       {gamingStats.psn.totalTrophies > 0 ? (
                         <span className="gaming-trophies-badge">
-                          (🏆 {gamingStats.psn.trophies.platinum}P {gamingStats.psn.trophies.gold}G)
+                          (<TrophyIcon type="platinum" size={12} /> {gamingStats.psn.trophies.platinum}P <TrophyIcon type="gold" size={12} /> {gamingStats.psn.trophies.gold}G)
                         </span>
                       ) : ""}
                     </span>
@@ -713,15 +768,17 @@ export default function TopicPage({ slug: propSlug }) {
                       type="button"
                       className={`gaming-pill-btn ${gamingPlatformFilter === "steam" ? "active" : ""}`}
                       onClick={() => setGamingPlatformFilter("steam")}
+                      title="Steam"
                     >
-                      🎮 Steam ({gamingStats.steam.count})
+                      <PlatformIcon platform="steam" size={16} /> ({gamingStats.steam.count})
                     </button>
                     <button
                       type="button"
                       className={`gaming-pill-btn ${gamingPlatformFilter === "psn" ? "active" : ""}`}
                       onClick={() => setGamingPlatformFilter("psn")}
+                      title="PlayStation"
                     >
-                      🎮 PlayStation ({gamingStats.psn.count})
+                      <PlatformIcon platform="psn" size={16} /> ({gamingStats.psn.count})
                     </button>
                   </div>
                 </div>
@@ -765,10 +822,9 @@ export default function TopicPage({ slug: propSlug }) {
               <section className="gaming-section gaming-section-playing">
                 <div className="gaming-section-header">
                   <div className="gaming-section-title-wrap">
-                    <span className="gaming-section-badge playing-badge">
+                    <h2 className="gaming-section-title">
                       <span className="gaming-live-dot" /> Playing Now
-                    </span>
-                    <h2 className="gaming-section-title">🕹️ Playing Now</h2>
+                    </h2>
                   </div>
                   <span className="gaming-section-count">
                     {playingNowGames.length} {playingNowGames.length === 1 ? "game" : "games"}
@@ -787,10 +843,7 @@ export default function TopicPage({ slug: propSlug }) {
               <section className="gaming-section gaming-section-completed">
                 <div className="gaming-section-header">
                   <div className="gaming-section-title-wrap">
-                    <span className="gaming-section-badge completed-badge">
-                      🏆 Platinum / 100%
-                    </span>
-                    <h2 className="gaming-section-title">🏆 Completed</h2>
+                    <h2 className="gaming-section-title">Completed</h2>
                   </div>
                   <span className="gaming-section-count">
                     {completedGames.length} {completedGames.length === 1 ? "game" : "games"}
@@ -809,10 +862,7 @@ export default function TopicPage({ slug: propSlug }) {
               <section className="gaming-section gaming-section-backlog">
                 <div className="gaming-section-header">
                   <div className="gaming-section-title-wrap">
-                    <span className="gaming-section-badge backlog-badge">
-                      📦 Queue
-                    </span>
-                    <h2 className="gaming-section-title">📦 Backlog</h2>
+                    <h2 className="gaming-section-title">Backlog</h2>
                   </div>
                   <span className="gaming-section-count">
                     {backlogGames.length} {backlogGames.length === 1 ? "game" : "games"}

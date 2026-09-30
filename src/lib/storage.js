@@ -55,3 +55,61 @@ export async function deleteImage(url) {
     // Ignore — file may already be deleted or URL may be external
   }
 }
+
+/**
+ * Upload an official gaming branding asset (trophy, ribbon, platform logo)
+ * to Firebase Storage under gaming/branding/<filename>.
+ *
+ * @param {Blob|File} blob - Image data
+ * @param {string} filename - e.g. 'trophy-platinum.png'
+ * @returns {Promise<string>} - Download URL
+ */
+export async function uploadGamingBrandAsset(blob, filename) {
+  const storageRef = ref(storage, `gaming/branding/${filename}`);
+  const uploadTask = uploadBytesResumable(storageRef, blob, {
+    contentType: "image/png",
+  });
+  return new Promise((resolve, reject) => {
+    uploadTask.on(
+      "state_changed",
+      null,
+      (err) => reject(err),
+      async () => {
+        const url = await getDownloadURL(uploadTask.snapshot.ref);
+        resolve(url);
+      }
+    );
+  });
+}
+
+/**
+ * Batch sync all local original gaming assets to Firebase Cloud Storage.
+ *
+ * @param {Function} onProgress - Optional callback(current, total, filename)
+ * @returns {Promise<Record<string, string>>} - Map of filename -> cloud URL
+ */
+export async function syncAllGamingAssetsToStorage(onProgress) {
+  const assets = [
+    "trophy-platinum.png",
+    "trophy-gold.png",
+    "trophy-silver.png",
+    "trophy-bronze.png",
+    "steam-ribbon.png",
+    "steam-logo.png",
+    "playstation-logo.png",
+    "playstation-logo-white.png",
+  ];
+
+  const results = {};
+  for (let i = 0; i < assets.length; i++) {
+    const filename = assets[i];
+    if (onProgress) onProgress(i + 1, assets.length, filename);
+    const res = await fetch(`/icons/gaming/${filename}`);
+    if (!res.ok) throw new Error(`Could not read /icons/gaming/${filename}`);
+    const blob = await res.blob();
+    const url = await uploadGamingBrandAsset(blob, filename);
+    results[filename] = url;
+  }
+  return results;
+}
+

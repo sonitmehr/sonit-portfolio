@@ -21,8 +21,8 @@ service firebase.storage {
       allow delete: if isAdmin();
     }
 
-    // Gaming cover art — admin upload, public read
-    match /gaming/{filename} {
+    // Gaming assets & cover art — admin upload, public read
+    match /gaming/{allPaths=**} {
       allow read: if true;
       allow write: if isAdmin() && isValidImage();
       allow delete: if isAdmin();

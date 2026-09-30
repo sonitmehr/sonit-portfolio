@@ -19,6 +19,13 @@ import {
   DIFFICULTY_XP,
 } from "../../../lib/gamification";
 import cache from "../../../lib/cache";
+import {
+  TrophyIcon,
+  PlatformIcon,
+  SteamRibbonIcon,
+  GamingPlatformTag,
+} from "../../../components/Gaming/GamingIcons";
+import { syncAllGamingAssetsToStorage } from "../../../lib/storage";
 import "./GamingTracker.css";
 
 
@@ -220,6 +227,8 @@ const GamingTracker = () => {
   const [bulkApplying, setBulkApplying]           = useState(false);
   const [cloudSyncing, setCloudSyncing]           = useState(false);  // Cloud Function sync state
   const [cloudSyncResult, setCloudSyncResult]     = useState(null);   // { steam, psn } results
+  const [storageSyncing, setStorageSyncing]       = useState(false);  // Cloud Storage asset sync
+  const [storageSyncResult, setStorageSyncResult] = useState(null);
 
   // Real-time Firestore sync
   useEffect(() => {
@@ -720,6 +729,22 @@ const GamingTracker = () => {
     }
   };
 
+  const handleSyncBrandingToStorage = async () => {
+    setStorageSyncing(true);
+    setStorageSyncResult(null);
+    try {
+      const urls = await syncAllGamingAssetsToStorage((current, total, file) => {
+        console.log(`[Storage] Uploaded ${file} (${current}/${total})`);
+      });
+      setStorageSyncResult({ success: true, count: Object.keys(urls).length });
+    } catch (err) {
+      console.error("Firebase Storage sync error:", err);
+      setStorageSyncResult({ success: false, error: err.message });
+    } finally {
+      setStorageSyncing(false);
+    }
+  };
+
   // ─── Steam Library Sync via Local Vite Proxy ─────────────────────────────
 
   const handleOpenSteamSync = async () => {
@@ -1058,10 +1083,10 @@ const GamingTracker = () => {
         </div>
         <div className="gt-header-actions">
           <button className="gt-btn-steam" onClick={handleOpenSteamSync} title="Sync library directly from Steam">
-            <span className="gt-btn-icon">💻</span> Sync Steam
+            <span className="gt-btn-icon"><PlatformIcon platform="steam" size={16} /></span> Sync Steam
           </button>
           <button className="gt-btn-psn" onClick={handleOpenPsnSync} title="Sync trophies directly from PlayStation Network">
-            <span className="gt-btn-icon">🎮</span> Sync PSN
+            <span className="gt-btn-icon"><PlatformIcon platform="psn" size={16} variant="white" /></span> Sync PSN
           </button>
           <button className="gt-btn-primary" onClick={openAddModal}>
             <span className="gt-btn-icon">+</span> Add Game
@@ -1079,12 +1104,12 @@ const GamingTracker = () => {
             <strong>Production / any device:</strong> Use <em>Sync via Cloud ☁️</em> to trigger Steam + PSN sync from anywhere.
           </div>
         </div>
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
           <button className="gt-btn-steam-sm" onClick={handleOpenSteamSync} title="Local Vite proxy — only works during npm run dev">
-            💻 Sync Steam (Local)
+            <PlatformIcon platform="steam" size={14} /> Sync Steam (Local)
           </button>
           <button className="gt-btn-psn-sm" onClick={handleOpenPsnSync} title="Local Vite proxy — only works during npm run dev">
-            🎮 Sync PSN (Local)
+            <PlatformIcon platform="psn" size={14} variant="white" /> Sync PSN (Local)
           </button>
           <button
             className="gt-btn-cloud-sync"
@@ -1094,8 +1119,32 @@ const GamingTracker = () => {
           >
             {cloudSyncing ? "⏳ Syncing…" : "☁️ Sync via Cloud"}
           </button>
+          <button
+            className="gt-btn-storage-sync"
+            onClick={handleSyncBrandingToStorage}
+            disabled={storageSyncing}
+            title="Upload all 8 official gaming branding assets to Firebase Cloud Storage"
+          >
+            <TrophyIcon type="platinum" size={14} />
+            {storageSyncing ? "Uploading Assets..." : "Sync Assets to Cloud Storage"}
+          </button>
         </div>
       </div>
+
+      {/* Storage Sync Result Banner */}
+      {storageSyncResult && (
+        <div className="gt-cloud-result-banner" style={{ background: storageSyncResult.success ? "rgba(46, 213, 115, 0.15)" : "rgba(255, 71, 87, 0.15)", borderColor: storageSyncResult.success ? "#2ed573" : "#ff4757" }}>
+          <span>
+            {storageSyncResult.success
+              ? `⚡ Successfully uploaded ${storageSyncResult.count} official assets to Firebase Cloud Storage (gaming/branding/*)`
+              : `⚠️ Cloud Storage sync notice: ${storageSyncResult.error} (Local fallback assets active)`}
+          </span>
+          <button
+            style={{ marginLeft: "auto", background: "none", border: "none", color: "rgba(255,255,255,0.5)", cursor: "pointer", fontSize: "18px" }}
+            onClick={() => setStorageSyncResult(null)}
+          >×</button>
+        </div>
+      )}
 
       {/* Cloud Sync Result Banner */}
       {cloudSyncResult && (
@@ -1139,7 +1188,9 @@ const GamingTracker = () => {
         </div>
 
         <div className="gt-stat-card">
-          <div className="gt-stat-icon" style={{ color: "#FFD93D" }}>🏆</div>
+          <div className="gt-stat-icon" style={{ color: "#FFD93D" }}>
+            <TrophyIcon type="platinum" size={26} />
+          </div>
           <div className="gt-stat-content">
             <div className="gt-stat-val-row">
               <span className="gt-stat-value">{statsSummary.completed}</span>
@@ -1397,9 +1448,9 @@ const GamingTracker = () => {
                           borderColor: platform.color,
                           color: platform.color,
                         }}
+                        title={platform.label}
                       >
-                        <span>{platform.icon}</span>
-                        <span>{platform.badge}</span>
+                        <PlatformIcon platform={game.platform} size={14} variant={game.platform === "psn" ? "white" : "default"} />
                       </span>
                     </div>
 
@@ -1488,24 +1539,33 @@ const GamingTracker = () => {
                     <div className="gt-trophies-row">
                       {tr.platinum > 0 && (
                         <span className="gt-trophy-item gt-trophy-plat" title="Platinum Trophies">
-                          🏆 {tr.platinum}
+                          <TrophyIcon type="platinum" size={14} /> {tr.platinum}
                         </span>
                       )}
                       {tr.gold > 0 && (
                         <span className="gt-trophy-item gt-trophy-gold" title="Gold Trophies">
-                          🥇 {tr.gold}
+                          <TrophyIcon type="gold" size={14} /> {tr.gold}
                         </span>
                       )}
                       {tr.silver > 0 && (
                         <span className="gt-trophy-item gt-trophy-silver" title="Silver Trophies">
-                          🥈 {tr.silver}
+                          <TrophyIcon type="silver" size={14} /> {tr.silver}
                         </span>
                       )}
                       {tr.bronze > 0 && (
                         <span className="gt-trophy-item gt-trophy-bronze" title="Bronze Trophies">
-                          🥉 {tr.bronze}
+                          <TrophyIcon type="bronze" size={14} /> {tr.bronze}
                         </span>
                       )}
+                    </div>
+                  )}
+
+                  {/* Steam 100% Ribbon */}
+                  {game.platform === "steam" && game.achievementsTotal > 0 && game.achievementsUnlocked >= game.achievementsTotal && (
+                    <div style={{ marginTop: "6px" }}>
+                      <span className="gaming-perfect-ribbon-badge" style={{ padding: "3px 6px" }} title="Steam 100% Perfect Game (All Achievements Unlocked)">
+                        <SteamRibbonIcon size={16} />
+                      </span>
                     </div>
                   )}
 
@@ -1870,7 +1930,9 @@ const GamingTracker = () => {
                   <label>Trophy Breakdown (Optional / PlayStation)</label>
                   <div className="gt-trophies-input-grid">
                     <div className="gt-trophy-input-item">
-                      <span className="gt-trophy-input-icon">🏆</span>
+                      <span className="gt-trophy-input-icon">
+                        <TrophyIcon type="platinum" size={18} />
+                      </span>
                       <input
                         type="number"
                         min="0"
@@ -1881,7 +1943,9 @@ const GamingTracker = () => {
                       />
                     </div>
                     <div className="gt-trophy-input-item">
-                      <span className="gt-trophy-input-icon">🥇</span>
+                      <span className="gt-trophy-input-icon">
+                        <TrophyIcon type="gold" size={18} />
+                      </span>
                       <input
                         type="number"
                         min="0"
@@ -1892,7 +1956,9 @@ const GamingTracker = () => {
                       />
                     </div>
                     <div className="gt-trophy-input-item">
-                      <span className="gt-trophy-input-icon">🥈</span>
+                      <span className="gt-trophy-input-icon">
+                        <TrophyIcon type="silver" size={18} />
+                      </span>
                       <input
                         type="number"
                         min="0"
@@ -1903,7 +1969,9 @@ const GamingTracker = () => {
                       />
                     </div>
                     <div className="gt-trophy-input-item">
-                      <span className="gt-trophy-input-icon">🥉</span>
+                      <span className="gt-trophy-input-icon">
+                        <TrophyIcon type="bronze" size={18} />
+                      </span>
                       <input
                         type="number"
                         min="0"
@@ -1968,7 +2036,9 @@ const GamingTracker = () => {
           <div className="gt-steam-modal" onClick={(e) => e.stopPropagation()}>
             <div className="gt-modal-header">
               <div className="gt-steam-header-title">
-                <span className="gt-steam-logo-badge">💻</span>
+                <span className="gt-steam-logo-badge" style={{ background: "transparent" }}>
+                  <PlatformIcon platform="steam" size={24} />
+                </span>
                 <div>
                   <h2>Sync Steam Library</h2>
                   <p className="gt-steam-header-sub">
@@ -2131,7 +2201,9 @@ const GamingTracker = () => {
           <div className="gt-psn-modal" onClick={(e) => e.stopPropagation()}>
             <div className="gt-modal-header">
               <div className="gt-psn-header-title">
-                <span className="gt-psn-logo-badge">🎮</span>
+                <span className="gt-psn-logo-badge" style={{ background: "transparent" }}>
+                  <PlatformIcon platform="psn" size={24} />
+                </span>
                 <div>
                   <h2>Sync PlayStation Library</h2>
                   <p className="gt-psn-header-sub">
@@ -2231,8 +2303,8 @@ const GamingTracker = () => {
                               </span>
                             )}
                             {game.trophies?.platinum > 0 && (
-                              <span className="gt-trophy-pill" style={{ background: "rgba(0, 184, 148, 0.2)", color: "#00b894" }}>
-                                🏆 Platinum
+                              <span className="gt-trophy-pill" style={{ background: "rgba(0, 184, 148, 0.2)", color: "#00b894", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                <TrophyIcon type="platinum" size={14} /> Platinum
                               </span>
                             )}
                             {game.achievementsTotal > 0 && (
@@ -2250,8 +2322,10 @@ const GamingTracker = () => {
                                 🎯 {game.achievementsUnlocked} / {game.achievementsTotal} Trophies
                               </span>
                             )}
-                            <span style={{ fontSize: "11px", color: "rgba(255, 255, 255, 0.5)" }}>
-                              {game.trophies?.gold || 0}G • {game.trophies?.silver || 0}S • {game.trophies?.bronze || 0}B
+                            <span style={{ fontSize: "11px", color: "rgba(255, 255, 255, 0.6)", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: "2px" }}><TrophyIcon type="gold" size={12} /> {game.trophies?.gold || 0}</span>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: "2px" }}><TrophyIcon type="silver" size={12} /> {game.trophies?.silver || 0}</span>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: "2px" }}><TrophyIcon type="bronze" size={12} /> {game.trophies?.bronze || 0}</span>
                             </span>
                             <span className="gt-difficulty-pill">{game.difficulty}</span>
                             <span className="gt-xp-pill">+{game.xpValue} XP</span>

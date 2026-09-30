@@ -395,8 +395,12 @@
 }
 
 .gaming-trophies-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   color: #ffd93d;
   font-weight: 600;
+  margin-left: 4px;
 }
 
 .gaming-stat-progress-bar {
@@ -559,6 +563,9 @@
 }
 
 .topic-trophy-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   font-size: 0.78rem;
   font-weight: 600;
   padding: 0.2rem 0.5rem;
@@ -567,10 +574,40 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.topic-trophy-item.plat { color: #a29bfe; border-color: rgba(162, 155, 254, 0.3); }
-.topic-trophy-item.gold { color: #ffd93d; border-color: rgba(255, 217, 61, 0.3); }
-.topic-trophy-item.silver { color: #dfe6e9; border-color: rgba(223, 230, 233, 0.3); }
-.topic-trophy-item.bronze { color: #e17055; border-color: rgba(225, 112, 85, 0.3); }
+.topic-trophy-item.plat { color: #a29bfe; border-color: rgba(162, 155, 254, 0.3); background: rgba(162, 155, 254, 0.08); }
+.topic-trophy-item.gold { color: #ffd93d; border-color: rgba(255, 217, 61, 0.3); background: rgba(255, 217, 61, 0.08); }
+.topic-trophy-item.silver { color: #dfe6e9; border-color: rgba(223, 230, 233, 0.3); background: rgba(223, 230, 233, 0.08); }
+.topic-trophy-item.bronze { color: #e17055; border-color: rgba(225, 112, 85, 0.3); background: rgba(225, 112, 85, 0.08); }
+
+/* ── Platform & Completion Icon-only Badges ── */
+.topic-platform-logo-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+
+.topic-status-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+
+.topic-status-icon-wrap:hover,
+.topic-platform-logo-wrap:hover {
+  transform: scale(1.08);
+}
 
 /* ── Gaming Curated Sections ── */
 .gaming-sections-container {
