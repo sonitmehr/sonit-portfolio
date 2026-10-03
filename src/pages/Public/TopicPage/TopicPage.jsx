@@ -85,7 +85,8 @@ function ItemCard({ item, index, isHighlighted = false }) {
               />
             </span>
           )}
-          {item.category &&
+          {/* Category/Genre badge hidden from public display for now per request */}
+          {/* {item.category &&
             item.category.toLowerCase().trim() !== (item.platform || "").toLowerCase().trim() && (
               <span
                 className="topic-item-category"
@@ -102,7 +103,7 @@ function ItemCard({ item, index, isHighlighted = false }) {
               >
                 {item.category}
               </span>
-            )}
+            )} */}
           {/* Completed status: for PSN show platinum icon in place of "completed"; for Steam show ribbon without "Perfect" */}
           {item.status === "completed" ? (
             isPsn ? (
@@ -114,17 +115,16 @@ function ItemCard({ item, index, isHighlighted = false }) {
                 <SteamRibbonIcon size={18} />
               </span>
             )
-          ) : (
-            // For other statuses: only show if not playing now (to avoid repeating "Playing Now")
-            !isPlaying && statusBadge && (
-              <span
-                className="topic-item-status"
-                style={{ color: statusBadge.color, borderColor: statusBadge.color + "44" }}
-              >
-                {statusBadge.label}
-              </span>
-            )
-          )}
+          ) : null}
+          {/* Status text badge (e.g. Backlog) hidden from public display for now per request */}
+          {/* {!isPlaying && statusBadge && (
+            <span
+              className="topic-item-status"
+              style={{ color: statusBadge.color, borderColor: statusBadge.color + "44" }}
+            >
+              {statusBadge.label}
+            </span>
+          )} */}
         </div>
         <h3 className="topic-item-title">{item.title}</h3>
         {item.description && (
