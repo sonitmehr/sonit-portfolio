@@ -63,11 +63,6 @@ function ItemCard({ item, index, isHighlighted = false }) {
       className={`topic-item-card ${isPlaying ? "topic-item-card-playing" : ""}`}
       style={{ "--fade-delay": `${index * 0.06}s` }}
     >
-      {isPlaying && (
-        <div className="topic-card-highlight-badge">
-          <span className="gaming-live-dot" /> Playing Now
-        </div>
-      )}
       {item.imageUrl && (
         <div className="topic-item-img-wrap">
           <img
@@ -822,9 +817,7 @@ export default function TopicPage({ slug: propSlug }) {
               <section className="gaming-section gaming-section-playing">
                 <div className="gaming-section-header">
                   <div className="gaming-section-title-wrap">
-                    <h2 className="gaming-section-title">
-                      <span className="gaming-live-dot" /> Playing Now
-                    </h2>
+                    <h2 className="gaming-section-title">Playing Now</h2>
                   </div>
                   <span className="gaming-section-count">
                     {playingNowGames.length} {playingNowGames.length === 1 ? "game" : "games"}
