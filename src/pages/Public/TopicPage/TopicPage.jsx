@@ -463,8 +463,10 @@ export default function TopicPage({ slug: propSlug }) {
     let psnMinutes = 0;
     let steamAch = 0;
     let steamAchUnlocked = 0;
+    let steamCompletedCount = 0;
     let psnAch = 0;
     let psnAchUnlocked = 0;
+    let psnCompletedCount = 0;
     let completedCount = 0;
     let inProgressCount = 0;
     let backlogCount = 0;
@@ -479,7 +481,8 @@ export default function TopicPage({ slug: propSlug }) {
       totalAch += achTotal;
       totalAchUnlocked += achUnlocked;
 
-      if (item.status === "completed") {
+      const isCompleted = item.status === "completed";
+      if (isCompleted) {
         completedCount++;
       } else if (item.status === "in_progress") {
         inProgressCount++;
@@ -493,11 +496,13 @@ export default function TopicPage({ slug: propSlug }) {
         steamMinutes += minutes;
         steamAch += achTotal;
         steamAchUnlocked += achUnlocked;
+        if (isCompleted) steamCompletedCount++;
       } else if (plat === "psn" || plat === "playstation") {
         psnCount++;
         psnMinutes += minutes;
         psnAch += achTotal;
         psnAchUnlocked += achUnlocked;
+        if (isCompleted) psnCompletedCount++;
       }
 
       if (item.trophies) {
@@ -529,12 +534,14 @@ export default function TopicPage({ slug: propSlug }) {
         hours: steamHours,
         achTotal: steamAch,
         achUnlocked: steamAchUnlocked,
+        completedCount: steamCompletedCount,
       },
       psn: {
         count: psnCount,
         hours: psnHours,
         achTotal: psnAch,
         achUnlocked: psnAchUnlocked,
+        completedCount: psnCompletedCount,
         trophies,
         totalTrophies,
       },
@@ -644,7 +651,6 @@ export default function TopicPage({ slug: propSlug }) {
               {/* Metrics Grid */}
               <div id="gaming-hero-stats" className="gaming-stats-grid">
                 <div className="gaming-stat-card">
-                  <div className="gaming-stat-icon">⏱️</div>
                   <div className="gaming-stat-info">
                     <span className="gaming-stat-value">{gamingStats.totalHours} hrs</span>
                     <span className="gaming-stat-label">Total Playtime</span>
@@ -661,7 +667,6 @@ export default function TopicPage({ slug: propSlug }) {
                 </div>
 
                 <div className="gaming-stat-card">
-                  <div className="gaming-stat-icon">🎯</div>
                   <div className="gaming-stat-info">
                     <span className="gaming-stat-value">
                       {gamingStats.totalAchUnlocked}
@@ -678,20 +683,13 @@ export default function TopicPage({ slug: propSlug }) {
                 </div>
 
                 <div className="gaming-stat-card">
-                  <div className="gaming-stat-icon">⚡</div>
                   <div className="gaming-stat-info">
                     <span className="gaming-stat-value">{gamingStats.completionRate}%</span>
                     <span className="gaming-stat-label">Completion Rate</span>
-                    <span className="gaming-stat-sub">
-                      {gamingStats.completedCount} / {gamingStats.totalGames} Platinum
-                    </span>
                   </div>
                 </div>
 
                 <div className="gaming-stat-card">
-                  <div className="gaming-stat-icon">
-                    <PlatformIcon platform="psn" size={24} />
-                  </div>
                   <div className="gaming-stat-info">
                     <span className="gaming-stat-value">{gamingStats.totalGames} Games</span>
                     <span className="gaming-stat-label">Platforms & Trophies</span>
@@ -703,11 +701,25 @@ export default function TopicPage({ slug: propSlug }) {
                       <span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}>
                         <PlatformIcon platform="psn" size={12} /> {gamingStats.psn.count}
                       </span>
-                      {gamingStats.psn.totalTrophies > 0 ? (
-                        <span className="gaming-trophies-badge">
-                          (<TrophyIcon type="platinum" size={12} /> {gamingStats.psn.trophies.platinum}P <TrophyIcon type="gold" size={12} /> {gamingStats.psn.trophies.gold}G)
-                        </span>
-                      ) : ""}
+                      {(gamingStats.psn.trophies.platinum > 0 || (gamingStats.steam.completedCount || 0) > 0) && (
+                        <>
+                          <span>•</span>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                            {gamingStats.psn.trophies.platinum > 0 && (
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }} title={`${gamingStats.psn.trophies.platinum} Platinum Trophies`}>
+                                {gamingStats.psn.trophies.platinum}
+                                <TrophyIcon type="platinum" size={13} />
+                              </span>
+                            )}
+                            {(gamingStats.steam.completedCount || 0) > 0 && (
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }} title={`${gamingStats.steam.completedCount} Steam 100% Completions`}>
+                                {gamingStats.steam.completedCount}
+                                <SteamRibbonIcon size={14} />
+                              </span>
+                            )}
+                          </span>
+                        </>
+                      )}
                     </span>
                   </div>
                 </div>
