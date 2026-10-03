@@ -19,13 +19,41 @@ function parsePlayDuration(durationStr) {
   };
 }
 
-function normalizeTitle(str) {
+function cleanTitle(str) {
   return (str || '')
     .toLowerCase()
+    .replace(/[’‘`]/g, "'")
     .replace(/[™®©]/g, '')
-    .replace(/[:\-–—]/g, ' ')
+    .replace(/\s*\([^)]*\)/g, ' ')
+    .replace(/\s*ps[45].*$/i, '')
+    .replace(/\s+trophies\s*$/i, '')
+    .replace(/[:\-–—_]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function normalizeTitle(str) {
+  return cleanTitle(str);
+}
+
+const PSN_TITLE_ALIASES = {
+  "marvel's spider man remastered": "marvel's spider man",
+  "assassin's creed ii": "assassin's creed the ezio collection",
+  "little nightmares enhanced edition": "little nightmares",
+  "five nights at freddys help wanted": "five nights at freddy's vr help wanted",
+};
+
+function matchPlayInfo(trophyTitleName, playMap) {
+  const cleaned = cleanTitle(trophyTitleName);
+  if (playMap.has(cleaned)) return playMap.get(cleaned);
+  const alias = PSN_TITLE_ALIASES[cleaned];
+  if (alias && playMap.has(alias)) return playMap.get(alias);
+  for (const [key, val] of playMap.entries()) {
+    if (key.length > 5 && (cleaned.startsWith(key) || key.startsWith(cleaned))) {
+      return val;
+    }
+  }
+  return null;
 }
 
 /**
@@ -77,8 +105,8 @@ function psnSyncPlugin(env) {
           const playMap = new Map();
           for (const item of playedTitles) {
             const parsed = parsePlayDuration(item.playDuration);
-            const norm = normalizeTitle(item.name || item.localizedName);
-            playMap.set(norm, {
+            const cleaned = cleanTitle(item.name || item.localizedName);
+            playMap.set(cleaned, {
               playtimeHours: parsed.hours,
               playtimeMinutes: parsed.minutes,
               playCount: item.playCount || 0,
@@ -95,10 +123,10 @@ function psnSyncPlugin(env) {
           const games = [];
 
           for (const title of trophyTitles) {
-            const norm = normalizeTitle(title.trophyTitleName);
-            processedNorms.add(norm);
+            const cleaned = cleanTitle(title.trophyTitleName);
+            processedNorms.add(cleaned);
 
-            const playInfo = playMap.get(norm) || {};
+            const playInfo = matchPlayInfo(title.trophyTitleName, playMap) || {};
             const earned = title.earnedTrophies || { platinum: 0, gold: 0, silver: 0, bronze: 0 };
             const defined = title.definedTrophies || { platinum: 0, gold: 0, silver: 0, bronze: 0 };
 
@@ -167,7 +195,7 @@ function psnSyncPlugin(env) {
 
           // Also add played titles that might not have trophy sets (e.g. apps/previews)
           for (const item of playedTitles) {
-            const norm = normalizeTitle(item.name || item.localizedName);
+            const norm = cleanTitle(item.name || item.localizedName);
             if (!processedNorms.has(norm)) {
               processedNorms.add(norm);
               const parsed = parsePlayDuration(item.playDuration);

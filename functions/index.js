@@ -46,13 +46,41 @@ function parsePlayDuration(durationStr) {
   };
 }
 
-function normalizeTitle(str) {
+function cleanTitle(str) {
   return (str || "")
     .toLowerCase()
+    .replace(/[’‘`]/g, "'")
     .replace(/[™®©]/g, "")
-    .replace(/[:\-–—]/g, " ")
+    .replace(/\s*\([^)]*\)/g, " ")
+    .replace(/\s*ps[45].*$/i, "")
+    .replace(/\s+trophies\s*$/i, "")
+    .replace(/[:\-–—_]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function normalizeTitle(str) {
+  return cleanTitle(str);
+}
+
+const PSN_TITLE_ALIASES = {
+  "marvel's spider man remastered": "marvel's spider man",
+  "assassin's creed ii": "assassin's creed the ezio collection",
+  "little nightmares enhanced edition": "little nightmares",
+  "five nights at freddys help wanted": "five nights at freddy's vr help wanted",
+};
+
+function matchPlayInfo(trophyTitleName, playMap) {
+  const cleaned = cleanTitle(trophyTitleName);
+  if (playMap.has(cleaned)) return playMap.get(cleaned);
+  const alias = PSN_TITLE_ALIASES[cleaned];
+  if (alias && playMap.has(alias)) return playMap.get(alias);
+  for (const [key, val] of playMap.entries()) {
+    if (key.length > 5 && (cleaned.startsWith(key) || key.startsWith(cleaned))) {
+      return val;
+    }
+  }
+  return null;
 }
 
 function getDifficultyFromHours(hours) {
@@ -170,10 +198,21 @@ async function doPSNSync() {
   const code = await exchangeNpssoForCode(npsso);
   const auth = await exchangeCodeForAccessToken(code);
 
+  // Pre-fetch existing PSN documents to safeguard against overwriting non-zero playtimes
+  const existingSnaps = await db.collection("gamingProgress").where("platform", "==", "psn").get();
+  const existingMap = new Map();
+  existingSnaps.forEach((doc) => existingMap.set(doc.id, doc.data()));
+
   // 2. Fetch played games (contains exact playtime & durations) and trophy titles in parallel
   const [playedRes, titlesRes] = await Promise.all([
-    getUserPlayedGames({ accessToken: auth.accessToken }, "me", { limit: 100 }).catch(() => ({ titles: [] })),
-    getUserTitles({ accessToken: auth.accessToken }, "me", { limit: 200 }).catch(() => ({ trophyTitles: [] })),
+    getUserPlayedGames({ accessToken: auth.accessToken }, "me", { limit: 100 }).catch((err) => {
+      console.error("[PSN Sync] getUserPlayedGames error:", err?.message || err);
+      return { titles: [] };
+    }),
+    getUserTitles({ accessToken: auth.accessToken }, "me", { limit: 200 }).catch((err) => {
+      console.error("[PSN Sync] getUserTitles error:", err?.message || err);
+      return { trophyTitles: [] };
+    }),
   ]);
 
   const playedTitles = playedRes.titles || [];
@@ -187,8 +226,8 @@ async function doPSNSync() {
   const playMap = new Map();
   for (const item of playedTitles) {
     const parsed = parsePlayDuration(item.playDuration);
-    const norm = normalizeTitle(item.name || item.localizedName);
-    playMap.set(norm, {
+    const cleaned = cleanTitle(item.name || item.localizedName);
+    playMap.set(cleaned, {
       playtimeHours: parsed.hours,
       playtimeMinutes: parsed.minutes,
       playCount: item.playCount || 0,
@@ -205,11 +244,24 @@ async function doPSNSync() {
   const games = await Promise.allSettled(
     allTitles.map(async (title) => {
       const npCommunicationId = title.npCommunicationId;
-      const norm = normalizeTitle(title.trophyTitleName);
-      processedNorms.add(norm);
+      const docId = `psn_${npCommunicationId}`;
+      const cleaned = cleanTitle(title.trophyTitleName);
+      processedNorms.add(cleaned);
 
-      const playInfo = playMap.get(norm) || {};
-      const hours = playInfo.playtimeHours || 0;
+      const playInfo = matchPlayInfo(title.trophyTitleName, playMap) || {};
+      let hours = playInfo.playtimeHours || 0;
+      let minutes = playInfo.playtimeMinutes || Math.round(hours * 60);
+      let playCount = playInfo.playCount || 0;
+      let genre = playInfo.genres || "";
+
+      // Safeguard: If playInfo returned 0 hours, preserve existing valid playtime in DB
+      const existing = existingMap.get(docId);
+      if (hours === 0 && existing && (Number(existing.playtimeHours) > 0 || Number(existing.playtimeMinutes) > 0)) {
+        hours = Number(existing.playtimeHours) || Math.round((Number(existing.playtimeMinutes) / 60) * 10) / 10;
+        minutes = Number(existing.playtimeMinutes) || Math.round(hours * 60);
+        playCount = Number(existing.playCount) || playCount;
+        if (!genre && existing.genre) genre = existing.genre;
+      }
 
       let platinum = 0, gold = 0, silver = 0, bronze = 0;
       let earnedPlatinum = 0, earnedGold = 0, earnedSilver = 0, earnedBronze = 0;
@@ -261,17 +313,17 @@ async function doPSNSync() {
       );
 
       return {
-        id: `psn_${npCommunicationId}`,
+        id: docId,
         psnCommunicationId: npCommunicationId,
         title: title.trophyTitleName,
         platform: "psn",
-        genre: playInfo.genres || "",
+        genre,
         playtimeHours: hours,
-        playtimeMinutes: playInfo.playtimeMinutes || hours * 60,
-        playCount: playInfo.playCount || 0,
+        playtimeMinutes: minutes,
+        playCount,
         coverArtUrl: title.trophyTitleIconUrl || playInfo.imageUrl || "",
-        status,
-        priority: (completionPct >= 50 || hours >= 20) ? "high" : "medium",
+        status: (existing?.status && status === "not_started") ? existing.status : status,
+        priority: (completionPct >= 50 || hours >= 20) ? "high" : (existing?.priority || "medium"),
         difficulty,
         xpValue,
         achievementsTotal: totalTrophies,
@@ -283,9 +335,9 @@ async function doPSNSync() {
           bronze: earnedBronze,
         },
         trophyTotals: { platinum, gold, silver, bronze },
-        rating: null,
-        personalNotes: "",
-        isPublic: false,
+        rating: existing?.rating ?? null,
+        personalNotes: existing?.personalNotes || "",
+        isPublic: existing ? Boolean(existing.isPublic) : false,
         lastSyncedAt: FieldValue.serverTimestamp(),
       };
     })
