@@ -3,7 +3,7 @@ import { SupercellIcon } from "./GamingIcons";
 import "./ClashOfClansModal.css";
 
 export default function ClashOfClansModal({ isOpen, onClose, cocData, onRefresh }) {
-  const [activeTab, setActiveTab] = useState("heroes");
+  const [activeTab, setActiveTab] = useState("village");
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -77,21 +77,14 @@ export default function ClashOfClansModal({ isOpen, onClose, cocData, onRefresh 
             </div>
 
             <div className="coc-player-identity">
-              <a
-                href="/icons/gaming/coc/clash-of-clans-cover.jpg"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="coc-header-avatar-link"
-                title="View full resolution Barbarian King artwork in new tab"
-              >
+              <div className="coc-header-avatar-wrap">
                 <img
                   src="/icons/gaming/coc/clash-of-clans-cover.jpg"
                   alt="Clash of Clans Barbarian King"
                   className="coc-header-avatar-img"
                   loading="lazy"
                 />
-                <span className="coc-avatar-zoom-icon">↗</span>
-              </a>
+              </div>
               <div className="coc-th-badge">
                 <span className="coc-th-num">{player.townHallLevel || 16}</span>
                 <span className="coc-th-label">TH</span>
@@ -139,16 +132,16 @@ export default function ClashOfClansModal({ isOpen, onClose, cocData, onRefresh 
         {/* Tab Navigation */}
         <nav className="coc-modal-nav">
           <button
+            className={`coc-tab-btn ${activeTab === "village" ? "active" : ""}`}
+            onClick={() => setActiveTab("village")}
+          >
+            🏰 Village & Clan
+          </button>
+          <button
             className={`coc-tab-btn ${activeTab === "heroes" ? "active" : ""}`}
             onClick={() => setActiveTab("heroes")}
           >
             👑 Heroes & Equipment ({heroes.length})
-          </button>
-          <button
-            className={`coc-tab-btn ${activeTab === "clan" ? "active" : ""}`}
-            onClick={() => setActiveTab("clan")}
-          >
-            🛡️ Clan & Village ({clan ? clan.name : "Clan"})
           </button>
           <button
             className={`coc-tab-btn ${activeTab === "spells" ? "active" : ""}`}
@@ -292,9 +285,71 @@ export default function ClashOfClansModal({ isOpen, onClose, cocData, onRefresh 
             </div>
           )}
 
-          {/* TAB 2: CLAN & VILLAGE */}
-          {activeTab === "clan" && (
+          {/* TAB 1: VILLAGE & CLAN */}
+          {activeTab === "village" && (
             <div className="coc-tab-pane">
+              {/* 1. Town Hall 16 Base Layout Showcase */}
+              <div className="coc-section-heading">
+                <div className="coc-heading-with-badge">
+                  <h3>🏰 Active Town Hall 16 Village Layout</h3>
+                  <span className="coc-epic-badge">War & Trophy Layout</span>
+                </div>
+                <span className="coc-section-desc">
+                  Current war & defense layout showing Giga Inferno weapon, monolith defense, and core compartments
+                </span>
+              </div>
+
+              <div className="coc-base-showcase-box">
+                <div className="coc-base-img-container">
+                  <img
+                    src="/icons/gaming/coc/clash-of-clans-base.png"
+                    alt="Town Hall 16 Village Base Layout"
+                    className="coc-base-full-img"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="coc-base-footer-bar">
+                  <div className="coc-base-status-tag">
+                    <span className="coc-dot-indicator green" /> TH16 War & Defense Layout
+                  </div>
+                  <span className="coc-base-hint">Level 218 • Lifetime Best: {player.bestTrophies?.toLocaleString() || "5,012"} 🏆</span>
+                </div>
+              </div>
+
+              {/* 2. Village Highlights & Defense Records */}
+              <div className="coc-section-heading mt-6">
+                <h3>Base Defense & Records</h3>
+                <span className="coc-section-desc">Home village milestones and builder base progression</span>
+              </div>
+              <div className="coc-village-grid">
+                <div className="coc-village-card">
+                  <h4>🏰 Home Village</h4>
+                  <ul>
+                    <li><strong>Town Hall:</strong> Level {player.townHallLevel}</li>
+                    <li><strong>Giga Inferno / Weapon:</strong> Level {player.townHallWeaponLevel || 1}</li>
+                    <li><strong>War Stars Earned:</strong> {player.warStars?.toLocaleString()} ⭐</li>
+                    <li><strong>Lifetime Best Trophies:</strong> {player.bestTrophies?.toLocaleString()} 🏆 (Legends)</li>
+                  </ul>
+                </div>
+                <div className="coc-village-card">
+                  <h4>🔨 Builder Base</h4>
+                  <ul>
+                    <li><strong>Builder Hall:</strong> Level {player.builderHallLevel || 10}</li>
+                    <li><strong>Current Trophies:</strong> {player.builderBaseTrophies?.toLocaleString()} 🏆</li>
+                    <li><strong>Best Trophies:</strong> {player.bestBuilderBaseTrophies?.toLocaleString() || 5102} 🏆</li>
+                    <li><strong>League:</strong> {player.builderBaseLeague?.name || "Emerald League III"}</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* 3. Clan Overview & War Records */}
+              <div className="coc-section-heading mt-6">
+                <div className="coc-heading-with-badge">
+                  <h3>🛡️ Clan Overview & War Records</h3>
+                </div>
+                <span className="coc-section-desc">Active clan membership, league tier, and war contributions</span>
+              </div>
+
               {clan ? (
                 <div className="coc-clan-card">
                   <div className="coc-clan-header">
@@ -344,82 +399,6 @@ export default function ClashOfClansModal({ isOpen, onClose, cocData, onRefresh 
               ) : (
                 <p className="coc-empty-text">No clan details available for this player.</p>
               )}
-
-              {/* Village Highlights */}
-              <div className="coc-section-heading mt-6">
-                <h3>Base Defense & Records</h3>
-              </div>
-              <div className="coc-village-grid">
-                <div className="coc-village-card">
-                  <h4>🏰 Home Village</h4>
-                  <ul>
-                    <li><strong>Town Hall:</strong> Level {player.townHallLevel}</li>
-                    <li><strong>Giga Inferno / Weapon:</strong> Level {player.townHallWeaponLevel || 1}</li>
-                    <li><strong>War Stars Earned:</strong> {player.warStars?.toLocaleString()} ⭐</li>
-                    <li><strong>Lifetime Best Trophies:</strong> {player.bestTrophies?.toLocaleString()} 🏆 (Legends)</li>
-                  </ul>
-                </div>
-                <div className="coc-village-card">
-                  <h4>🔨 Builder Base</h4>
-                  <ul>
-                    <li><strong>Builder Hall:</strong> Level {player.builderHallLevel || 10}</li>
-                    <li><strong>Current Trophies:</strong> {player.builderBaseTrophies?.toLocaleString()} 🏆</li>
-                    <li><strong>Best Trophies:</strong> {player.bestBuilderBaseTrophies?.toLocaleString() || 5102} 🏆</li>
-                    <li><strong>League:</strong> {player.builderBaseLeague?.name || "Emerald League III"}</li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* Town Hall 16 Base Layout Showcase */}
-              <div className="coc-section-heading mt-6">
-                <div className="coc-heading-with-badge">
-                  <h3>🏰 Active Town Hall 16 Village Layout</h3>
-                  <span className="coc-epic-badge">Ultra HD • 7.8 MB</span>
-                </div>
-                <span className="coc-section-desc">
-                  Current war & defense layout showing Giga Inferno weapon, monolith defense, and core compartments
-                </span>
-              </div>
-
-              <div className="coc-base-showcase-box">
-                <div className="coc-base-img-container">
-                  <img
-                    src="/icons/gaming/coc/clash-of-clans-base.png"
-                    alt="Town Hall 16 Village Base Layout"
-                    className="coc-base-full-img"
-                    loading="lazy"
-                  />
-                  <a
-                    href="/icons/gaming/coc/clash-of-clans-base.png"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="coc-base-zoom-badge"
-                    title="Open full resolution (7.8 MB) base layout screenshot in new tab"
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                      <polyline points="15 3 21 3 21 9" />
-                      <line x1="10" y1="14" x2="21" y2="3" />
-                    </svg>
-                    <span>Open High-Res Base Layout (New Tab)</span>
-                  </a>
-                </div>
-                <div className="coc-base-footer-bar">
-                  <div className="coc-base-status-tag">
-                    <span className="coc-dot-indicator green" /> TH16 War & Trophy Defense
-                  </div>
-                  <span className="coc-base-hint">Click the button above to view every defense in uncompressed full detail</span>
-                </div>
-              </div>
 
               {/* API Capabilities Note */}
               <div className="coc-api-notice-box">

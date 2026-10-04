@@ -104,33 +104,6 @@ function ItemCard({ item, index, isHighlighted = false, onOpenCocModal }) {
             loading="lazy"
             onError={(e) => (e.target.parentElement.style.display = "none")}
           />
-          {isSupercell && (
-            <a
-              href={item.imageUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="coc-card-img-expand-btn"
-              title="Open full high-resolution cover in new tab"
-              onClick={(e) => e.stopPropagation()}
-              aria-label="Open high-resolution cover image in new tab"
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
-              <span>Full Res</span>
-            </a>
-          )}
         </div>
       )}
       <div className="topic-item-body">
@@ -146,14 +119,6 @@ function ItemCard({ item, index, isHighlighted = false, onOpenCocModal }) {
                 variant={isPsn ? "white" : "default"}
               />
             </span>
-          )}
-          {isSupercell && (
-            <>
-              <span className="coc-badge-interactive">
-                <span className="pulse-dot" /> TH {item.cocData?.townHallLevel || 16}
-              </span>
-              <span className="coc-badge-live">Live Profile</span>
-            </>
           )}
           {/* Completed status: for PSN show platinum icon in place of "completed"; for Steam show ribbon without "Perfect" */}
           {item.status === "completed" ? (
@@ -173,18 +138,8 @@ function ItemCard({ item, index, isHighlighted = false, onOpenCocModal }) {
           <p className="topic-item-desc">{item.description}</p>
         )}
 
-        {/* Quick Hero chips for Clash of Clans */}
-        {isSupercell && (
-          <div className="coc-card-quick-heroes">
-            <span className="coc-hero-chip">👑 King 82</span>
-            <span className="coc-hero-chip">🏹 Queen 86</span>
-            <span className="coc-hero-chip">🧙 Warden 56</span>
-            <span className="coc-hero-chip">🔨 BH10</span>
-          </div>
-        )}
-
         {/* Achievement / trophy progress bar */}
-        {!isSupercell && item.achievementsTotal > 0 && (
+        {item.achievementsTotal > 0 && (
           <div className="topic-item-progress">
             <div className="topic-progress-bar">
               <div
@@ -230,18 +185,10 @@ function ItemCard({ item, index, isHighlighted = false, onOpenCocModal }) {
           </div>
         ) : null}
         {/* Playtime */}
-        {!isSupercell && item.playtimeMinutes > 0 && (
+        {item.playtimeMinutes > 0 && (
           <span className="topic-item-playtime">
             ⏱ {Math.round((item.playtimeMinutes / 60) * 10) / 10}h played
           </span>
-        )}
-
-        {/* Special Clash of Clans Interactive CTA Button */}
-        {isSupercell && (
-          <div className="coc-card-view-btn">
-            <span>👑 Inspect Village, Heroes & Gear</span>
-            <span>→</span>
-          </div>
         )}
       </div>
     </article>

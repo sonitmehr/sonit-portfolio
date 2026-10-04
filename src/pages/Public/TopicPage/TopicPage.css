@@ -774,82 +774,6 @@
               0 0 25px rgba(245, 158, 11, 0.22) !important;
 }
 
-.coc-badge-interactive {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: rgba(245, 158, 11, 0.2);
-  border: 1px solid rgba(245, 158, 11, 0.45);
-  color: #fde047;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 6px;
-}
-
-.coc-badge-interactive .pulse-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #facc15;
-  box-shadow: 0 0 6px #facc15;
-  animation: cocDotPulse 1.8s infinite;
-}
-
-@keyframes cocDotPulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.85); }
-}
-
-.coc-badge-live {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: #34d399;
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.35);
-  padding: 2px 6px;
-  border-radius: 6px;
-  text-transform: uppercase;
-}
-
-.coc-card-quick-heroes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 4px;
-}
-
-.coc-hero-chip {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #f1f5f9;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 2px 7px;
-  border-radius: 6px;
-}
-
-.coc-card-view-btn {
-  margin-top: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 7px 12px;
-  border-radius: 8px;
-  background: rgba(245, 158, 11, 0.15);
-  border: 1px solid rgba(245, 158, 11, 0.35);
-  color: #fef08a;
-  font-size: 0.76rem;
-  font-weight: 700;
-  transition: all 0.2s ease;
-}
-
-.topic-item-card-coc:hover .coc-card-view-btn {
-  background: #f59e0b;
-  color: #78350f;
-  border-color: #fde047;
-}
-
 /* ── Clash of Clans Card Cover Art Presentation ── */
 .topic-item-img-wrap-coc {
   position: relative;
@@ -890,36 +814,5 @@
   transform: scale(1.06) rotate(-0.5deg) !important;
   box-shadow: 0 14px 30px -4px rgba(0, 0, 0, 0.85), 0 0 20px rgba(245, 158, 11, 0.45) !important;
   border-color: rgba(253, 224, 71, 0.7) !important;
-}
-
-.coc-card-img-expand-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 5;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 9px;
-  border-radius: 20px;
-  background: rgba(13, 17, 23, 0.78);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #f1f5f9;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-decoration: none;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-}
-
-.coc-card-img-expand-btn:hover {
-  background: #f59e0b;
-  color: #78350f;
-  border-color: #fde047;
-  transform: translateY(-1px) scale(1.04);
-  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
 }
 
