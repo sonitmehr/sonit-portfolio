@@ -185,11 +185,15 @@ function ItemCard({ item, index, isHighlighted = false, onOpenCocModal }) {
           </div>
         ) : null}
         {/* Playtime */}
-        {item.playtimeMinutes > 0 && (
+        {isSupercell ? (
+          <span className="topic-item-playtime">
+            ⏱ Playing since 2015. Countless hours... lol
+          </span>
+        ) : item.playtimeMinutes > 0 ? (
           <span className="topic-item-playtime">
             ⏱ {Math.round((item.playtimeMinutes / 60) * 10) / 10}h played
           </span>
-        )}
+        ) : null}
       </div>
     </article>
   );
@@ -353,8 +357,8 @@ export default function TopicPage({ slug: propSlug }) {
                 status: data.status,
                 achievementsTotal: Number(data.achievementsTotal) || 0,
                 achievementsUnlocked: Number(data.achievementsUnlocked) || 0,
-                playtimeMinutes: (Number(data.playtimeHours) || 0) * 60 || Number(data.playtimeMinutes) || 0,
-                playtimeHours: Number(data.playtimeHours) || (data.playtimeMinutes ? Math.round(Number(data.playtimeMinutes) / 6) / 10 : 0),
+                playtimeMinutes: isSupercellItem ? 0 : ((Number(data.playtimeHours) || 0) * 60 || Number(data.playtimeMinutes) || 0),
+                playtimeHours: isSupercellItem ? 0 : (Number(data.playtimeHours) || (data.playtimeMinutes ? Math.round(Number(data.playtimeMinutes) / 6) / 10 : 0)),
                 trophies: data.trophies || { platinum: 0, gold: 0, silver: 0, bronze: 0 },
                 rating: data.rating,
                 order: data.order ?? (isSupercellItem ? 0 : 99),
@@ -370,9 +374,12 @@ export default function TopicPage({ slug: propSlug }) {
               }
             });
 
-            // Also check local Clash of Clans API proxy for live profile data
+            // Also check Clash of Clans live API proxy or static fallback
             try {
-              const cocRes = await fetch("/api/coc/player").catch(() => null);
+              let cocRes = await fetch("/api/coc/player").catch(() => null);
+              if (!cocRes || !cocRes.ok) {
+                cocRes = await fetch("/icons/gaming/coc/profile.json").catch(() => null);
+              }
               if (cocRes && cocRes.ok) {
                 const cocJson = await cocRes.json();
                 if (cocJson.success && cocJson.game) {
@@ -400,7 +407,7 @@ export default function TopicPage({ slug: propSlug }) {
                 }
               }
             } catch (err) {
-              console.warn("Local CoC fetch notice:", err);
+              console.warn("CoC fetch notice:", err);
             }
           } catch (e) {
             console.warn("Could not query gamingProgress:", e);

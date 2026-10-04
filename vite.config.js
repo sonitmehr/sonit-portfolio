@@ -453,8 +453,9 @@ function cocSyncPlugin(env) {
             priority: "high",
             difficulty: "epic",
             xpValue: 500,
-            playtimeHours: 250,
-            playtimeMinutes: 15000,
+            playtimeHours: 0,
+            playtimeMinutes: 0,
+            playtimeDisplay: "Playing since 2015. Countless hours... lol",
             achievementsTotal: player.achievements ? player.achievements.length : 0,
             achievementsUnlocked: player.achievements ? player.achievements.filter((a) => a.stars === 3).length : 0,
             trophies: {

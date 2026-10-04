@@ -970,6 +970,8 @@ const GamingTracker = () => {
       const payload = {
         ...data.game,
         id: docId,
+        playtimeHours: 0,
+        playtimeMinutes: 0,
         updatedAt: serverTimestamp(),
       };
 
