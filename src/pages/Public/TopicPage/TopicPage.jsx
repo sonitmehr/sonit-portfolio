@@ -260,14 +260,22 @@ export default function TopicPage({ slug: propSlug }) {
       const cachedPayload = cache.get(`topic-${slug}`);
       if (cachedPayload) {
         const { config: cachedConfig, items: cachedItems } = cachedPayload;
-        if (cachedConfig) setPageConfig(cachedConfig);
-        if (cachedItems) setItems(cachedItems);
-        if (cachedConfig) {
-          document.title = `${cachedConfig.title || slug} — Sonit Mehrotra`;
-          const metaDesc = document.querySelector("meta[name='description']");
-          if (metaDesc) metaDesc.setAttribute("content", cachedConfig.seoDescription || cachedConfig.description || "");
+        // If on /gaming and stale cache lacks Clash of Clans, invalidate so fresh CoC loads immediately
+        const hasCoc = slug !== "gaming" || (cachedItems || []).some(
+          (i) => (i.platform || "").toLowerCase() === "supercell" || (i.title && i.title.toLowerCase().includes("clash of clans"))
+        );
+        if (hasCoc) {
+          if (cachedConfig) setPageConfig(cachedConfig);
+          if (cachedItems) setItems(cachedItems);
+          if (cachedConfig) {
+            document.title = `${cachedConfig.title || slug} — Sonit Mehrotra`;
+            const metaDesc = document.querySelector("meta[name='description']");
+            if (metaDesc) metaDesc.setAttribute("content", cachedConfig.seoDescription || cachedConfig.description || "");
+          }
+          setLoading(false);
+        } else {
+          cache.clear(`topic-${slug}`);
         }
-        setLoading(false);
       }
       // ──────────────────────────────────────────────────────────────────────
 
@@ -374,13 +382,26 @@ export default function TopicPage({ slug: propSlug }) {
               }
             });
 
-            // Also check Clash of Clans live API proxy or static fallback
+            // Also check Clash of Clans live API proxy (in dev) or static fallback (production resilient)
             try {
-              let cocRes = await fetch("/api/coc/player").catch(() => null);
-              if (!cocRes || !cocRes.ok) {
-                cocRes = await fetch("/icons/gaming/coc/profile.json").catch(() => null);
+              let cocRes = null;
+              if (import.meta.env.DEV) {
+                try {
+                  const devRes = await fetch("/api/coc/player");
+                  const contentType = devRes.headers.get("content-type") || "";
+                  if (devRes.ok && contentType.includes("application/json")) {
+                    cocRes = devRes;
+                  }
+                } catch (_) {}
               }
-              if (cocRes && cocRes.ok) {
+              if (!cocRes) {
+                const staticRes = await fetch("/icons/gaming/coc/profile.json").catch(() => null);
+                const staticType = staticRes?.headers.get("content-type") || "";
+                if (staticRes && staticRes.ok && staticType.includes("application/json")) {
+                  cocRes = staticRes;
+                }
+              }
+              if (cocRes) {
                 const cocJson = await cocRes.json();
                 if (cocJson.success && cocJson.game) {
                   const liveCoc = {
@@ -1017,8 +1038,24 @@ export default function TopicPage({ slug: propSlug }) {
         cocData={selectedCocItem?.cocData}
         onRefresh={async () => {
           try {
-            const res = await fetch("/api/coc/player");
-            if (res.ok) {
+            let res = null;
+            if (import.meta.env.DEV) {
+              try {
+                const devRes = await fetch("/api/coc/player");
+                const contentType = devRes.headers.get("content-type") || "";
+                if (devRes.ok && contentType.includes("application/json")) {
+                  res = devRes;
+                }
+              } catch (_) {}
+            }
+            if (!res) {
+              const staticRes = await fetch("/icons/gaming/coc/profile.json").catch(() => null);
+              const staticType = staticRes?.headers.get("content-type") || "";
+              if (staticRes && staticRes.ok && staticType.includes("application/json")) {
+                res = staticRes;
+              }
+            }
+            if (res) {
               const json = await res.json();
               if (json.success && json.game) {
                 setSelectedCocItem((prev) => ({

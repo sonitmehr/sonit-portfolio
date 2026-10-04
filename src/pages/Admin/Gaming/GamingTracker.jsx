@@ -955,13 +955,26 @@ const GamingTracker = () => {
   const handleSyncCoc = async () => {
     setCocSyncing(true);
     try {
-      const res = await fetch("/api/coc/player");
-      if (!res.ok) {
-        throw new Error("Could not connect to Clash of Clans local proxy. Ensure COC_API_TOKEN is set in .env.");
+      let data = null;
+      try {
+        const res = await fetch("/api/coc/player");
+        const contentType = res.headers.get("content-type") || "";
+        if (res.ok && contentType.includes("application/json")) {
+          data = await res.json();
+        }
+      } catch (_) {}
+
+      // Fallback to static snapshot profile.json if live API proxy fails or on prod
+      if (!data || !data.success || !data.game) {
+        const fallbackRes = await fetch("/icons/gaming/coc/profile.json");
+        const staticType = fallbackRes?.headers.get("content-type") || "";
+        if (fallbackRes.ok && staticType.includes("application/json")) {
+          data = await fallbackRes.json();
+        }
       }
-      const data = await res.json();
-      if (!data.success || !data.game) {
-        throw new Error(data.error || "No player data returned.");
+
+      if (!data || !data.success || !data.game) {
+        throw new Error(data?.error || "Could not load Clash of Clans profile data.");
       }
 
       const docId = data.game.id || "coc_barbking";
