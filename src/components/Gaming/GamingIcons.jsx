@@ -17,6 +17,7 @@ export const GAMING_ASSETS = {
     steam: "/icons/gaming/platforms/steam-logo.png",
     psn: "/icons/gaming/platforms/playstation-logo.png",
     psnWhite: "/icons/gaming/platforms/playstation-logo-white.png",
+    supercell: "/icons/gaming/platforms/supercell-logo-white.png",
   },
   ribbons: {
     steam100: "/icons/gaming/ribbons/steam-ribbon.png",
@@ -65,49 +66,35 @@ export function TrophyIcon({
 }
 
 /**
- * Supercell / Clash of Clans Golden Crown Icon
+ * Official Supercell Platform Logo (SUP / ERC / ELL)
  */
 export function SupercellIcon({
   size = 16,
   className = "",
   style = {},
+  alt,
   title = "Supercell",
 }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={`gaming-icon-img supercell-icon ${className}`}
+    <img
+      src={GAMING_ASSETS.platforms.supercell}
+      alt={alt ?? title}
       title={title}
+      width={Math.round(size * 1.2)}
+      height={size}
+      loading="lazy"
+      decoding="async"
+      className={`gaming-icon-img supercell-icon ${className}`}
       style={{
-        width: `${size}px`,
         height: `${size}px`,
+        width: "auto",
+        maxWidth: `${Math.round(size * 1.35)}px`,
         display: "inline-block",
         verticalAlign: "middle",
+        objectFit: "contain",
         ...style,
       }}
-    >
-      <defs>
-        <linearGradient id="cocCrownGrad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#FDE047" />
-          <stop offset="50%" stopColor="#F59E0B" />
-          <stop offset="100%" stopColor="#D97706" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M2.5 19.5h19c.6 0 1-.4 1-1 0-.2-.1-.4-.2-.6L19.5 7.5l-4.5 4-3-8.5-3 8.5-4.5-4L1.7 17.9c-.1.2-.2.4-.2.6 0 .6.4 1 1 1z"
-        fill="url(#cocCrownGrad)"
-        stroke="#78350F"
-        strokeWidth="1.2"
-        strokeLinejoin="round"
-      />
-      <circle cx="12" cy="15.5" r="1.3" fill="#78350F" />
-      <circle cx="7.5" cy="15.5" r="1" fill="#78350F" />
-      <circle cx="16.5" cy="15.5" r="1" fill="#78350F" />
-    </svg>
+    />
   );
 }
 

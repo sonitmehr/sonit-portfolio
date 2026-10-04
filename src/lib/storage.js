@@ -98,6 +98,7 @@ export async function syncAllGamingAssetsToStorage(onProgress) {
     { path: "platforms/steam-logo.png", filename: "steam-logo.png" },
     { path: "platforms/playstation-logo.png", filename: "playstation-logo.png" },
     { path: "platforms/playstation-logo-white.png", filename: "playstation-logo-white.png" },
+    { path: "platforms/supercell-logo-white.png", filename: "supercell-logo-white.png" },
     { path: "coc/clash-of-clans-cover.jpg", filename: "clash-of-clans-cover.jpg" },
   ];
 

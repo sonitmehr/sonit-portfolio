@@ -818,6 +818,14 @@ export default function TopicPage({ slug: propSlug }) {
                       <span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}>
                         <PlatformIcon platform="psn" size={12} /> {gamingStats.psn.count}
                       </span>
+                      {gamingStats.supercell?.count > 0 && (
+                        <>
+                          <span>•</span>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                            <PlatformIcon platform="supercell" size={12} /> {gamingStats.supercell.count}
+                          </span>
+                        </>
+                      )}
                       {(gamingStats.psn.trophies.platinum > 0 || (gamingStats.steam.completedCount || 0) > 0) && (
                         <>
                           <span>•</span>

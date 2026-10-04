@@ -67,8 +67,11 @@ export default function ClashOfClansModal({ isOpen, onClose, cocData, onRefresh 
           <div className="coc-modal-header-bg" />
           <div className="coc-modal-header-content">
             <div className="coc-header-badges">
+              <span className="coc-tag-supercell">
+                <SupercellIcon size={14} /> Supercell
+              </span>
               <span className="coc-tag-live">
-                <span className="coc-live-dot" /> Live Supercell API
+                <span className="coc-live-dot" /> Live API
               </span>
               <span className="coc-player-tag">{player.tag}</span>
             </div>
