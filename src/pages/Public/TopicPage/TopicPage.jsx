@@ -11,6 +11,7 @@ import {
 import { db } from "../../../lib/firebase";
 import * as cache from "../../../lib/cache";
 import CreditCardShowcase from "./CreditCardShowcase";
+import ClashOfClansModal from "../../../components/Gaming/ClashOfClansModal";
 import {
   TrophyIcon,
   PlatformIcon,
@@ -18,6 +19,7 @@ import {
   GamingPlatformTag,
 } from "../../../components/Gaming/GamingIcons";
 import "./TopicPage.css";
+
 
 /* Cache TTL: 1 hour for public page data */
 const CACHE_TTL = 60 * 60 * 1000;
@@ -52,16 +54,39 @@ const STATUS_BADGES = {
   shelved:      { label: "Backlog",      color: "#a29bfe" },
 };
 
-function ItemCard({ item, index, isHighlighted = false }) {
+function ItemCard({ item, index, isHighlighted = false, onOpenCocModal }) {
   const statusBadge = STATUS_BADGES[item.status] || null;
   const isPlaying = isHighlighted || item.status === "in_progress";
   const normPlatform = String(item.platform || "").toLowerCase().trim();
   const isPsn = normPlatform === "psn" || normPlatform === "playstation";
+  const isSupercell =
+    normPlatform === "supercell" ||
+    normPlatform === "coc" ||
+    item.isCoc ||
+    (item.title && item.title.toLowerCase().includes("clash of clans"));
+
+  const handleCardClick = () => {
+    if (isSupercell && onOpenCocModal) {
+      onOpenCocModal(item);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (isSupercell && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      onOpenCocModal && onOpenCocModal(item);
+    }
+  };
 
   return (
     <article
-      className={`topic-item-card ${isPlaying ? "topic-item-card-playing" : ""}`}
+      className={`topic-item-card ${isPlaying ? "topic-item-card-playing" : ""} ${isSupercell ? "topic-item-card-coc" : ""}`}
       style={{ "--fade-delay": `${index * 0.06}s` }}
+      onClick={handleCardClick}
+      onKeyDown={handleKeyDown}
+      role={isSupercell ? "button" : undefined}
+      tabIndex={isSupercell ? 0 : undefined}
+      aria-label={isSupercell ? `View Clash of Clans village and hero details for ${item.title}` : undefined}
     >
       {item.imageUrl && (
         <div className="topic-item-img-wrap">
@@ -77,7 +102,10 @@ function ItemCard({ item, index, isHighlighted = false }) {
       <div className="topic-item-body">
         <div className="topic-item-meta">
           {item.platform && (
-            <span className="topic-platform-logo-wrap" title={isPsn ? "PlayStation" : "Steam"}>
+            <span
+              className="topic-platform-logo-wrap"
+              title={isSupercell ? "Supercell" : isPsn ? "PlayStation" : "Steam"}
+            >
               <PlatformIcon
                 platform={item.platform}
                 size={16}
@@ -85,25 +113,14 @@ function ItemCard({ item, index, isHighlighted = false }) {
               />
             </span>
           )}
-          {/* Category/Genre badge hidden from public display for now per request */}
-          {/* {item.category &&
-            item.category.toLowerCase().trim() !== (item.platform || "").toLowerCase().trim() && (
-              <span
-                className="topic-item-category"
-                style={{
-                  backgroundColor:
-                    CATEGORY_COLORS[
-                      (item.category?.charCodeAt(0) || 0) % CATEGORY_COLORS.length
-                    ] + "22",
-                  color:
-                    CATEGORY_COLORS[
-                      (item.category?.charCodeAt(0) || 0) % CATEGORY_COLORS.length
-                    ],
-                }}
-              >
-                {item.category}
+          {isSupercell && (
+            <>
+              <span className="coc-badge-interactive">
+                <span className="pulse-dot" /> TH {item.cocData?.townHallLevel || 16}
               </span>
-            )} */}
+              <span className="coc-badge-live">Live Profile</span>
+            </>
+          )}
           {/* Completed status: for PSN show platinum icon in place of "completed"; for Steam show ribbon without "Perfect" */}
           {item.status === "completed" ? (
             isPsn ? (
@@ -116,22 +133,24 @@ function ItemCard({ item, index, isHighlighted = false }) {
               </span>
             )
           ) : null}
-          {/* Status text badge (e.g. Backlog) hidden from public display for now per request */}
-          {/* {!isPlaying && statusBadge && (
-            <span
-              className="topic-item-status"
-              style={{ color: statusBadge.color, borderColor: statusBadge.color + "44" }}
-            >
-              {statusBadge.label}
-            </span>
-          )} */}
         </div>
         <h3 className="topic-item-title">{item.title}</h3>
         {item.description && (
           <p className="topic-item-desc">{item.description}</p>
         )}
+
+        {/* Quick Hero chips for Clash of Clans */}
+        {isSupercell && (
+          <div className="coc-card-quick-heroes">
+            <span className="coc-hero-chip">👑 King 82</span>
+            <span className="coc-hero-chip">🏹 Queen 86</span>
+            <span className="coc-hero-chip">🧙 Warden 56</span>
+            <span className="coc-hero-chip">🔨 BH10</span>
+          </div>
+        )}
+
         {/* Achievement / trophy progress bar */}
-        {item.achievementsTotal > 0 && (
+        {!isSupercell && item.achievementsTotal > 0 && (
           <div className="topic-item-progress">
             <div className="topic-progress-bar">
               <div
@@ -152,7 +171,7 @@ function ItemCard({ item, index, isHighlighted = false }) {
           </div>
         )}
         {/* Trophy counts (for PSN / PlayStation) */}
-        {item.trophies && (item.trophies.platinum || item.trophies.gold || item.trophies.silver || item.trophies.bronze) ? (
+        {!isSupercell && item.trophies && (item.trophies.platinum || item.trophies.gold || item.trophies.silver || item.trophies.bronze) ? (
           <div className="topic-item-trophies">
             {item.trophies.platinum > 0 && (
               <span className="topic-trophy-item plat" title="Platinum Trophy">
@@ -177,10 +196,18 @@ function ItemCard({ item, index, isHighlighted = false }) {
           </div>
         ) : null}
         {/* Playtime */}
-        {item.playtimeMinutes > 0 && (
+        {!isSupercell && item.playtimeMinutes > 0 && (
           <span className="topic-item-playtime">
             ⏱ {Math.round((item.playtimeMinutes / 60) * 10) / 10}h played
           </span>
+        )}
+
+        {/* Special Clash of Clans Interactive CTA Button */}
+        {isSupercell && (
+          <div className="coc-card-view-btn">
+            <span>👑 Inspect Village, Heroes & Gear</span>
+            <span>→</span>
+          </div>
         )}
       </div>
     </article>
@@ -231,6 +258,7 @@ export default function TopicPage({ slug: propSlug }) {
   const [gamingPlatformFilter, setGamingPlatformFilter] = useState("all");
   const [gamingStatusFilter, setGamingStatusFilter] = useState("all");
   const [gamingSortBy, setGamingSortBy] = useState("playtime");
+  const [selectedCocItem, setSelectedCocItem] = useState(null);
 
   useEffect(() => {
     if (!slug) {
@@ -326,11 +354,16 @@ export default function TopicPage({ slug: propSlug }) {
                 !data.personalNotes.startsWith("Synced from Steam") &&
                 !data.personalNotes.startsWith("Synced from PSN");
 
+              const isSupercellItem =
+                (data.platform || "").toLowerCase() === "supercell" ||
+                (data.platform || "").toLowerCase() === "coc" ||
+                (data.title && data.title.toLowerCase().includes("clash of clans"));
+
               return {
                 id: d.id,
                 title: data.title,
                 description: hasCustomNote ? data.personalNotes : cleanGenre || "",
-                imageUrl: data.coverArtUrl || null,
+                imageUrl: data.coverArtUrl || (isSupercellItem ? "/icons/gaming/clash-of-clans-cover.jpg" : null),
                 platform: data.platform,
                 category: cleanGenre,
                 status: data.status,
@@ -340,8 +373,10 @@ export default function TopicPage({ slug: propSlug }) {
                 playtimeHours: Number(data.playtimeHours) || (data.playtimeMinutes ? Math.round(Number(data.playtimeMinutes) / 6) / 10 : 0),
                 trophies: data.trophies || { platinum: 0, gold: 0, silver: 0, bronze: 0 },
                 rating: data.rating,
-                order: data.order ?? 99,
+                order: data.order ?? (isSupercellItem ? 0 : 99),
                 createdAt: data.createdAt,
+                cocData: data.cocData || null,
+                isCoc: isSupercellItem,
               };
             });
             const existingTitles = new Set(loadedItems.map((i) => i.title?.toLowerCase().trim()));
@@ -350,10 +385,44 @@ export default function TopicPage({ slug: propSlug }) {
                 loadedItems.push(g);
               }
             });
+
+            // Also check local Clash of Clans API proxy for live profile data
+            try {
+              const cocRes = await fetch("/api/coc/player").catch(() => null);
+              if (cocRes && cocRes.ok) {
+                const cocJson = await cocRes.json();
+                if (cocJson.success && cocJson.game) {
+                  const liveCoc = {
+                    ...cocJson.game,
+                    imageUrl: cocJson.game.coverArtUrl || "/icons/gaming/clash-of-clans-cover.jpg",
+                    isCoc: true,
+                    cocData: cocJson.game.cocData || cocJson.player,
+                    order: 0,
+                  };
+                  const existingIdx = loadedItems.findIndex(
+                    (i) =>
+                      (i.platform || "").toLowerCase() === "supercell" ||
+                      (i.platform || "").toLowerCase() === "coc" ||
+                      (i.title && i.title.toLowerCase().includes("clash of clans"))
+                  );
+                  if (existingIdx !== -1) {
+                    loadedItems[existingIdx] = {
+                      ...loadedItems[existingIdx],
+                      ...liveCoc,
+                    };
+                  } else {
+                    loadedItems.unshift(liveCoc);
+                  }
+                }
+              }
+            } catch (err) {
+              console.warn("Local CoC fetch notice:", err);
+            }
           } catch (e) {
             console.warn("Could not query gamingProgress:", e);
           }
         }
+
 
         // Also fetch from careerGoals if on /career
         if (slug === "career") {
@@ -459,6 +528,7 @@ export default function TopicPage({ slug: propSlug }) {
     let totalAchUnlocked = 0;
     let steamCount = 0;
     let psnCount = 0;
+    let supercellCount = 0;
     let steamMinutes = 0;
     let psnMinutes = 0;
     let steamAch = 0;
@@ -503,6 +573,8 @@ export default function TopicPage({ slug: propSlug }) {
         psnAch += achTotal;
         psnAchUnlocked += achUnlocked;
         if (isCompleted) psnCompletedCount++;
+      } else if (plat === "supercell" || plat === "coc" || item.isCoc) {
+        supercellCount++;
       }
 
       if (item.trophies) {
@@ -545,6 +617,9 @@ export default function TopicPage({ slug: propSlug }) {
         trophies,
         totalTrophies,
       },
+      supercell: {
+        count: supercellCount,
+      },
     };
   }, [items, slug]);
 
@@ -572,12 +647,16 @@ export default function TopicPage({ slug: propSlug }) {
         const p = (it.platform || "").toLowerCase();
         if (gamingPlatformFilter === "steam") return p === "steam";
         if (gamingPlatformFilter === "psn") return p === "psn" || p === "playstation";
+        if (gamingPlatformFilter === "supercell") return p === "supercell" || p === "coc" || it.isCoc;
         return true;
       });
     }
 
-    // Fixed curated ranking: playtime descending, then achievements
+    // Fixed curated ranking: order first, then playtime descending, then achievements
     list.sort((a, b) => {
+      const aOrder = a.order ?? 99;
+      const bOrder = b.order ?? 99;
+      if (aOrder !== bOrder) return aOrder - bOrder;
       const aMin = a.playtimeMinutes || (Number(a.playtimeHours) || 0) * 60;
       const bMin = b.playtimeMinutes || (Number(b.playtimeHours) || 0) * 60;
       if (bMin !== aMin) return bMin - aMin;
@@ -586,6 +665,7 @@ export default function TopicPage({ slug: propSlug }) {
 
     return list;
   }, [items, slug, gamingPlatformFilter, gamingStatusFilter]);
+
 
   // Curated gaming tiers: 1. Playing Now -> 2. Completed -> 3. Backlog
   const playingNowGames = useMemo(() => {
@@ -787,6 +867,16 @@ export default function TopicPage({ slug: propSlug }) {
                     >
                       <PlatformIcon platform="psn" size={16} /> ({gamingStats.psn.count})
                     </button>
+                    {gamingStats.supercell?.count > 0 && (
+                      <button
+                        type="button"
+                        className={`gaming-pill-btn ${gamingPlatformFilter === "supercell" ? "active" : ""}`}
+                        onClick={() => setGamingPlatformFilter("supercell")}
+                        title="Supercell"
+                      >
+                        <PlatformIcon platform="supercell" size={16} /> ({gamingStats.supercell.count})
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -837,7 +927,13 @@ export default function TopicPage({ slug: propSlug }) {
                 </div>
                 <div className="topic-grid gaming-grid-playing">
                   {playingNowGames.map((item, i) => (
-                    <ItemCard key={item.id} item={item} index={i} isHighlighted={true} />
+                    <ItemCard
+                      key={item.id}
+                      item={item}
+                      index={i}
+                      isHighlighted={true}
+                      onOpenCocModal={setSelectedCocItem}
+                    />
                   ))}
                 </div>
               </section>
@@ -856,7 +952,12 @@ export default function TopicPage({ slug: propSlug }) {
                 </div>
                 <div className="topic-grid">
                   {completedGames.map((item, i) => (
-                    <ItemCard key={item.id} item={item} index={i} />
+                    <ItemCard
+                      key={item.id}
+                      item={item}
+                      index={i}
+                      onOpenCocModal={setSelectedCocItem}
+                    />
                   ))}
                 </div>
               </section>
@@ -875,7 +976,12 @@ export default function TopicPage({ slug: propSlug }) {
                 </div>
                 <div className="topic-grid gaming-grid-backlog">
                   {backlogGames.map((item, i) => (
-                    <ItemCard key={item.id} item={item} index={i} />
+                    <ItemCard
+                      key={item.id}
+                      item={item}
+                      index={i}
+                      onOpenCocModal={setSelectedCocItem}
+                    />
                   ))}
                 </div>
               </section>
@@ -884,7 +990,12 @@ export default function TopicPage({ slug: propSlug }) {
         ) : (
           <div className="topic-grid">
             {displayedItems.map((item, i) => (
-              <ItemCard key={item.id} item={item} index={i} />
+              <ItemCard
+                key={item.id}
+                item={item}
+                index={i}
+                onOpenCocModal={setSelectedCocItem}
+              />
             ))}
           </div>
         )}
@@ -899,6 +1010,31 @@ export default function TopicPage({ slug: propSlug }) {
           Made with ❤️ by Sonit Mehrotra
         </p>
       </footer>
+
+      {/* ── Clash of Clans Village Showcase Modal ── */}
+      <ClashOfClansModal
+        isOpen={Boolean(selectedCocItem)}
+        onClose={() => setSelectedCocItem(null)}
+        cocData={selectedCocItem?.cocData}
+        onRefresh={async () => {
+          try {
+            const res = await fetch("/api/coc/player");
+            if (res.ok) {
+              const json = await res.json();
+              if (json.success && json.game) {
+                setSelectedCocItem((prev) => ({
+                  ...prev,
+                  ...json.game,
+                  cocData: json.game.cocData || json.player,
+                }));
+              }
+            }
+          } catch (e) {
+            console.warn("Refresh error:", e);
+          }
+        }}
+      />
     </div>
   );
 }
+

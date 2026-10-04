@@ -61,7 +61,54 @@ export function TrophyIcon({
 }
 
 /**
- * Official Platform Icon (Steam, PlayStation)
+ * Supercell / Clash of Clans Golden Crown Icon
+ */
+export function SupercellIcon({
+  size = 16,
+  className = "",
+  style = {},
+  title = "Supercell",
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`gaming-icon-img supercell-icon ${className}`}
+      title={title}
+      style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        display: "inline-block",
+        verticalAlign: "middle",
+        ...style,
+      }}
+    >
+      <defs>
+        <linearGradient id="cocCrownGrad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#FDE047" />
+          <stop offset="50%" stopColor="#F59E0B" />
+          <stop offset="100%" stopColor="#D97706" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M2.5 19.5h19c.6 0 1-.4 1-1 0-.2-.1-.4-.2-.6L19.5 7.5l-4.5 4-3-8.5-3 8.5-4.5-4L1.7 17.9c-.1.2-.2.4-.2.6 0 .6.4 1 1 1z"
+        fill="url(#cocCrownGrad)"
+        stroke="#78350F"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="15.5" r="1.3" fill="#78350F" />
+      <circle cx="7.5" cy="15.5" r="1" fill="#78350F" />
+      <circle cx="16.5" cy="15.5" r="1" fill="#78350F" />
+    </svg>
+  );
+}
+
+/**
+ * Official Platform Icon (Steam, PlayStation, Supercell)
  */
 export function PlatformIcon({
   platform = "steam",
@@ -74,6 +121,18 @@ export function PlatformIcon({
 }) {
   const norm = String(platform || "").toLowerCase().trim();
   const isPsn = norm === "psn" || norm === "playstation" || norm === "ps5" || norm === "ps4";
+  const isSupercell = norm === "supercell" || norm === "coc" || norm === "clashofclans";
+
+  if (isSupercell) {
+    return (
+      <SupercellIcon
+        size={size}
+        className={className}
+        style={style}
+        title={title ?? "Supercell"}
+      />
+    );
+  }
   
   let src = GAMING_ASSETS.platforms.steam;
   let label = "Steam";
@@ -145,11 +204,12 @@ export function SteamRibbonIcon({
 export function GamingPlatformTag({ platform, className = "", showText = true }) {
   const norm = String(platform || "").toLowerCase().trim();
   const isPsn = norm === "psn" || norm === "playstation";
-  const name = isPsn ? "PlayStation" : "Steam";
+  const isSupercell = norm === "supercell" || norm === "coc" || norm === "clashofclans";
+  const name = isSupercell ? "Supercell" : isPsn ? "PlayStation" : "Steam";
 
   return (
-    <span className={`gaming-platform-tag platform-${isPsn ? "psn" : "steam"} ${className}`}>
-      <PlatformIcon platform={isPsn ? "psn" : "steam"} size={13} variant={isPsn ? "white" : "default"} />
+    <span className={`gaming-platform-tag platform-${isSupercell ? "supercell" : isPsn ? "psn" : "steam"} ${className}`}>
+      <PlatformIcon platform={isSupercell ? "supercell" : isPsn ? "psn" : "steam"} size={13} variant={isPsn ? "white" : "default"} />
       {showText && <span>{name}</span>}
     </span>
   );

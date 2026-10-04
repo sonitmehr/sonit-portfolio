@@ -756,3 +756,96 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Clash of Clans Special Card Styles ── */
+.topic-item-card-coc {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, rgba(20, 24, 33, 0.95) 100%) !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease !important;
+}
+
+.topic-item-card-coc:hover {
+  transform: translateY(-5px) scale(1.015);
+  border-color: #facc15 !important;
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.7),
+              0 0 25px rgba(245, 158, 11, 0.22) !important;
+}
+
+.coc-badge-interactive {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #fde047;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.coc-badge-interactive .pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #facc15;
+  box-shadow: 0 0 6px #facc15;
+  animation: cocDotPulse 1.8s infinite;
+}
+
+@keyframes cocDotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.coc-badge-live {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  padding: 2px 6px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.coc-card-quick-heroes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.coc-hero-chip {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.coc-card-view-btn {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fef08a;
+  font-size: 0.76rem;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.topic-item-card-coc:hover .coc-card-view-btn {
+  background: #f59e0b;
+  color: #78350f;
+  border-color: #fde047;
+}
+

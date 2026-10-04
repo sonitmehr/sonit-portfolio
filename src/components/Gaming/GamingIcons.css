@@ -79,3 +79,14 @@
   border-color: rgba(0, 112, 209, 0.35);
   color: #5bb3ff;
 }
+
+.supercell-icon {
+  filter: drop-shadow(0 1px 4px rgba(245, 158, 11, 0.45));
+}
+
+.gaming-platform-tag.platform-supercell {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+}
+

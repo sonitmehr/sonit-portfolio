@@ -380,11 +380,129 @@ function steamSyncPlugin(env) {
   };
 }
 
+/**
+ * Custom Vite Plugin for Local Clash of Clans Sync Proxy
+ * Bridges between local frontend and Supercell Clash of Clans API
+ */
+function cocSyncPlugin(env) {
+  return {
+    name: 'coc-sync-plugin',
+    configureServer(server) {
+      server.middlewares.use('/api/coc/player', async (req, res, next) => {
+        if (req.method !== 'GET' && req.method !== 'POST') {
+          return next();
+        }
+
+        const token = env.COC_API_TOKEN || process.env.COC_API_TOKEN;
+        let playerTag = env.COC_PLAYER_TAG || process.env.COC_PLAYER_TAG;
+
+        if (!token || !playerTag) {
+          res.statusCode = 400;
+          res.setHeader('Content-Type', 'application/json');
+          return res.end(
+            JSON.stringify({
+              error: 'Missing COC_API_TOKEN or COC_PLAYER_TAG in .env',
+            })
+          );
+        }
+
+        if (!playerTag.startsWith('#')) {
+          playerTag = '#' + playerTag;
+        }
+
+        try {
+          const encodedTag = encodeURIComponent(playerTag);
+          const playerRes = await fetch(`https://api.clashofclans.com/v1/players/${encodedTag}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json',
+            },
+          });
+
+          if (!playerRes.ok) {
+            const errBody = await playerRes.text();
+            throw new Error(`Supercell API error (${playerRes.status}): ${errBody}`);
+          }
+
+          const player = await playerRes.json();
+          let clan = null;
+
+          if (player.clan && player.clan.tag) {
+            try {
+              const clanRes = await fetch(`https://api.clashofclans.com/v1/clans/${encodeURIComponent(player.clan.tag)}`, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Accept': 'application/json',
+                },
+              });
+              if (clanRes.ok) {
+                clan = await clanRes.json();
+              }
+            } catch (clanErr) {
+              console.warn('[CoC Proxy] Clan fetch error:', clanErr.message);
+            }
+          }
+
+          const gameEntry = {
+            id: `coc_${player.tag.replace('#', '')}`,
+            title: "Clash of Clans",
+            platform: "supercell",
+            genre: "Strategy • Base Building",
+            coverArtUrl: "/icons/gaming/clash-of-clans-cover.jpg",
+            status: "in_progress",
+            priority: "high",
+            difficulty: "epic",
+            xpValue: 500,
+            playtimeHours: 250,
+            playtimeMinutes: 15000,
+            achievementsTotal: player.achievements ? player.achievements.length : 0,
+            achievementsUnlocked: player.achievements ? player.achievements.filter((a) => a.stars === 3).length : 0,
+            trophies: {
+              platinum: 1,
+              gold: player.townHallLevel || 16,
+              silver: player.builderHallLevel || 10,
+              bronze: player.warStars || 0,
+            },
+            personalNotes: `Town Hall ${player.townHallLevel} • ${player.clan ? player.clan.name : 'No Clan'}`,
+            isPublic: true,
+            order: 0,
+            cocData: {
+              ...player,
+              clanDetails: clan,
+            },
+          };
+
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(
+            JSON.stringify({
+              success: true,
+              game: gameEntry,
+              player,
+              clan,
+            })
+          );
+        } catch (err) {
+          console.error('[CoC Proxy] Error:', err);
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(
+            JSON.stringify({
+              error: err.message || 'Failed to fetch Clash of Clans data',
+            })
+          );
+        }
+      });
+    }
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    plugins: [react(), steamSyncPlugin(env), psnSyncPlugin(env)],
+    plugins: [react(), steamSyncPlugin(env), psnSyncPlugin(env), cocSyncPlugin(env)],
   };
 });
+

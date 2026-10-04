@@ -32,13 +32,15 @@ import "./GamingTracker.css";
 // ─── Constants & Metadata ───────────────────────────────────────────────────
 
 const PLATFORMS = [
-  { id: "steam",  label: "Steam",           icon: "💻", badge: "Steam",       color: "#66c0f4", bg: "#171a21" },
-  { id: "psn",    label: "PlayStation",     icon: "🎮", badge: "PlayStation", color: "#0070d1", bg: "#003791" },
-  { id: "switch", label: "Nintendo Switch", icon: "🕹️", badge: "Switch",      color: "#e60012", bg: "#4a0006" },
-  { id: "xbox",   label: "Xbox",            icon: "🟢", badge: "Xbox",        color: "#107c41", bg: "#0e3a1f" },
-  { id: "pc",     label: "PC / Desktop",    icon: "🖥️", badge: "PC",          color: "#4ECDC4", bg: "#133b3a" },
-  { id: "other",  label: "Other / Retro",   icon: "👾", badge: "Other",       color: "#a29bfe", bg: "#2d244c" },
+  { id: "steam",     label: "Steam",           icon: "💻", badge: "Steam",       color: "#66c0f4", bg: "#171a21" },
+  { id: "psn",       label: "PlayStation",     icon: "🎮", badge: "PlayStation", color: "#0070d1", bg: "#003791" },
+  { id: "supercell", label: "Supercell",       icon: "👑", badge: "Supercell",   color: "#f59e0b", bg: "#78350f" },
+  { id: "switch",    label: "Nintendo Switch", icon: "🕹️", badge: "Switch",      color: "#e60012", bg: "#4a0006" },
+  { id: "xbox",      label: "Xbox",            icon: "🟢", badge: "Xbox",        color: "#107c41", bg: "#0e3a1f" },
+  { id: "pc",        label: "PC / Desktop",    icon: "🖥️", badge: "PC",          color: "#4ECDC4", bg: "#133b3a" },
+  { id: "other",     label: "Other / Retro",   icon: "👾", badge: "Other",       color: "#a29bfe", bg: "#2d244c" },
 ];
+
 
 const PLATFORM_MAP = PLATFORMS.reduce((acc, p) => {
   acc[p.id] = p;
@@ -947,7 +949,56 @@ const GamingTracker = () => {
     ? psnGames.filter((g) => g.playtimeHours > 0 || g.achievementsUnlocked > 0)
     : psnGames;
 
+  // ─── Clash of Clans Sync via Local Proxy ──────────────────────────────────
+  const [cocSyncing, setCocSyncing] = useState(false);
+
+  const handleSyncCoc = async () => {
+    setCocSyncing(true);
+    try {
+      const res = await fetch("/api/coc/player");
+      if (!res.ok) {
+        throw new Error("Could not connect to Clash of Clans local proxy. Ensure COC_API_TOKEN is set in .env.");
+      }
+      const data = await res.json();
+      if (!data.success || !data.game) {
+        throw new Error(data.error || "No player data returned.");
+      }
+
+      const docId = data.game.id || "coc_barbking";
+      const existing = games.find((g) => g.id === docId || (g.platform || "").toLowerCase() === "supercell");
+
+      const payload = {
+        ...data.game,
+        id: docId,
+        updatedAt: serverTimestamp(),
+      };
+
+      if (existing) {
+        payload.isPublic = existing.isPublic !== undefined ? existing.isPublic : true;
+        payload.order = existing.order ?? 0;
+        payload.priority = existing.priority || payload.priority;
+        payload.personalNotes = existing.personalNotes || payload.personalNotes;
+      } else {
+        payload.isPublic = true;
+        payload.order = 0;
+        payload.createdAt = serverTimestamp();
+      }
+
+      await setDoc(doc(db, "gamingProgress", docId), payload, { merge: true });
+      triggerConfetti();
+      cache.clear("topic-gaming");
+      setXpToast({ xp: 500, title: "Clash of Clans Synced (Town Hall 16) 👑" });
+      setTimeout(() => setXpToast(null), 3500);
+    } catch (err) {
+      console.error("CoC sync error:", err);
+      alert(`Clash of Clans Sync Failed: ${err.message}`);
+    } finally {
+      setCocSyncing(false);
+    }
+  };
+
   // ─── Derived Statistics ────────────────────────────────────────────────────
+
 
   const statsSummary = useMemo(() => {
     const total = games.length;
@@ -1096,6 +1147,21 @@ const GamingTracker = () => {
           <button className="gt-btn-psn" onClick={handleOpenPsnSync} title="Sync trophies directly from PlayStation Network">
             <span className="gt-btn-icon"><PlatformIcon platform="psn" size={16} variant="white" /></span> Sync PSN
           </button>
+          <button
+            className="gt-btn-coc"
+            onClick={handleSyncCoc}
+            disabled={cocSyncing}
+            title="Sync live Town Hall and Hero stats directly from Supercell API"
+            style={{
+              background: "linear-gradient(135deg, #f59e0b, #d97706)",
+              color: "#fff",
+              border: "1px solid #fde047",
+              fontWeight: "700",
+            }}
+          >
+            <span className="gt-btn-icon"><PlatformIcon platform="supercell" size={16} /></span>
+            {cocSyncing ? "Syncing CoC…" : "Sync CoC"}
+          </button>
           <button className="gt-btn-primary" onClick={openAddModal}>
             <span className="gt-btn-icon">+</span> Add Game
           </button>
@@ -1108,7 +1174,7 @@ const GamingTracker = () => {
         <div className="gt-notice-content">
           <div className="gt-notice-title">Gaming Sync — Local Proxy + Cloud Functions ☁️</div>
           <div className="gt-notice-desc">
-            <strong>Local dev:</strong> Use <em>Sync Steam (Local)</em> when running <code>npm run dev</code> on this machine.<br />
+            <strong>Local dev:</strong> Use <em>Sync Steam (Local)</em>, <em>Sync PSN (Local)</em>, or <em>Sync CoC (Local)</em> when running <code>npm run dev</code> on this machine.<br />
             <strong>Production / any device:</strong> Use <em>Sync via Cloud ☁️</em> to trigger Steam + PSN sync from anywhere.
           </div>
         </div>
@@ -1118,6 +1184,27 @@ const GamingTracker = () => {
           </button>
           <button className="gt-btn-psn-sm" onClick={handleOpenPsnSync} title="Local Vite proxy — only works during npm run dev">
             <PlatformIcon platform="psn" size={14} variant="white" /> Sync PSN (Local)
+          </button>
+          <button
+            className="gt-btn-coc-sm"
+            onClick={handleSyncCoc}
+            disabled={cocSyncing}
+            title="Sync live Clash of Clans stats via local proxy"
+            style={{
+              background: "rgba(245, 158, 11, 0.2)",
+              color: "#fde047",
+              border: "1px solid rgba(245, 158, 11, 0.45)",
+              borderRadius: "8px",
+              padding: "6px 12px",
+              fontSize: "0.8rem",
+              fontWeight: "700",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              cursor: "pointer",
+            }}
+          >
+            <PlatformIcon platform="supercell" size={14} /> {cocSyncing ? "Syncing CoC…" : "Sync CoC (Local)"}
           </button>
           <button
             className="gt-btn-cloud-sync"
@@ -1137,6 +1224,7 @@ const GamingTracker = () => {
             {storageSyncing ? "Uploading Assets..." : "Sync Assets to Cloud Storage"}
           </button>
         </div>
+
       </div>
 
       {/* Storage Sync Result Banner */}
