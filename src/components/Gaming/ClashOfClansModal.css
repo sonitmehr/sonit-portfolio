@@ -1,49 +1,45 @@
-/* ── Clash of Clans Modal Styles ── */
+/* ── Clash of Clans Modal Styles (Fluid Responsive Scaling & Slim Scrollbars) ── */
 
 .coc-modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: rgba(8, 10, 16, 0.85);
+  background: rgba(6, 9, 15, 0.88);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
-  overflow-y: auto;
-  animation: cocFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: clamp(0.5rem, 2vh, 1.25rem);
+  overflow: hidden; /* Overlay never scrolls, eliminating double scrollbars */
+  animation: cocFadeIn 0.22s ease-out;
 }
 
 @keyframes cocFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .coc-modal-container {
   position: relative;
-  width: 100%;
-  max-width: 940px;
+  width: min(94vw, 920px);
+  height: min(88vh, 780px);
   max-height: 90vh;
-  background: linear-gradient(180deg, #161b26 0%, #0d1117 100%);
+  background: linear-gradient(180deg, #151926 0%, #0d1117 100%);
   border: 1px solid rgba(245, 158, 11, 0.35);
-  border-radius: 20px;
-  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8),
-              0 0 35px rgba(245, 158, 11, 0.15);
+  border-radius: 18px;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.85),
+              0 0 30px rgba(245, 158, 11, 0.15);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: cocScaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: cocScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes cocScaleUp {
   from {
     opacity: 0;
-    transform: scale(0.96) translateY(12px);
+    transform: scale(0.96) translateY(10px);
   }
   to {
     opacity: 1;
@@ -53,16 +49,16 @@
 
 .coc-modal-close {
   position: absolute;
-  top: 16px;
-  right: 18px;
+  top: 14px;
+  right: 16px;
   z-index: 10;
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(13, 17, 23, 0.8);
+  background: rgba(13, 17, 23, 0.85);
   color: #fff;
-  font-size: 1.1rem;
+  font-size: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -80,17 +76,18 @@
 /* ── Hero Header ── */
 .coc-modal-header {
   position: relative;
-  padding: 2.2rem 2.2rem 1.6rem 2.2rem;
-  background: linear-gradient(135deg, rgba(30, 27, 46, 0.95), rgba(15, 23, 42, 0.95));
+  padding: clamp(0.9rem, 2vh, 1.4rem) clamp(1.1rem, 2.5vw, 1.8rem) clamp(0.7rem, 1.6vh, 1rem);
+  background: linear-gradient(135deg, rgba(28, 24, 44, 0.98), rgba(15, 23, 42, 0.98));
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
   overflow: hidden;
 }
 
 .coc-modal-header-bg {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle at 80% 20%, rgba(245, 158, 11, 0.18), transparent 50%),
-                    radial-gradient(circle at 10% 90%, rgba(56, 189, 248, 0.12), transparent 45%);
+  background-image: radial-gradient(circle at 80% 20%, rgba(245, 158, 11, 0.16), transparent 50%),
+                    radial-gradient(circle at 10% 90%, rgba(56, 189, 248, 0.1), transparent 45%);
   pointer-events: none;
 }
 
@@ -99,36 +96,36 @@
   z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
+  gap: 0.75rem;
 }
 
 .coc-header-badges {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .coc-tag-live {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   background: rgba(16, 185, 129, 0.15);
   border: 1px solid rgba(16, 185, 129, 0.4);
   color: #34d399;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  padding: 3px 10px;
-  border-radius: 12px;
+  letter-spacing: 0.03em;
+  padding: 2px 8px;
+  border-radius: 10px;
   text-transform: uppercase;
 }
 
 .coc-live-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: #10b981;
-  box-shadow: 0 0 8px #10b981;
+  box-shadow: 0 0 6px #10b981;
   animation: cocPulse 2s infinite;
 }
 
@@ -139,27 +136,27 @@
 
 .coc-player-tag {
   font-family: monospace;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.6);
   background: rgba(255, 255, 255, 0.06);
-  padding: 3px 8px;
-  border-radius: 6px;
+  padding: 2px 7px;
+  border-radius: 5px;
 }
 
 .coc-player-identity {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
 }
 
 .coc-th-badge {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
   background: linear-gradient(135deg, #f59e0b, #b45309);
   border: 2px solid #fde047;
-  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.45);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -168,31 +165,31 @@
 }
 
 .coc-th-num {
-  font-size: 1.6rem;
+  font-size: 1.35rem;
   font-weight: 900;
   color: #fff;
   line-height: 1;
 }
 
 .coc-th-label {
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   font-weight: 800;
   color: #fef08a;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
 }
 
 .coc-name-wrap {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .coc-player-name {
   margin: 0;
-  font-size: 1.85rem;
+  font-size: clamp(1.3rem, 2vw, 1.65rem);
   font-weight: 900;
   color: #fff;
-  letter-spacing: -0.01em;
+  line-height: 1.15;
   background: linear-gradient(180deg, #ffffff 30%, #fef08a 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -202,16 +199,16 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .coc-level-pill,
 .coc-stars-pill,
 .coc-clan-pill {
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 600;
-  padding: 3px 9px;
-  border-radius: 6px;
+  padding: 2px 8px;
+  border-radius: 5px;
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: #e2e8f0;
@@ -230,32 +227,33 @@
 /* Quick Stats Bar */
 .coc-quick-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-top: 4px;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin-top: 2px;
 }
 
 .coc-quick-stat-box {
   background: rgba(13, 17, 23, 0.65);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 10px 14px;
+  border-radius: 9px;
+  padding: 6px 10px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .coc-stat-label {
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
 }
 
 .coc-stat-val {
-  font-size: 1.15rem;
+  font-size: 0.98rem;
   font-weight: 800;
+  line-height: 1.2;
 }
 
 .text-gold { color: #facc15; }
@@ -264,29 +262,30 @@
 .text-orange { color: #fb923c; }
 
 .coc-stat-sub {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.66rem;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 /* ── Tab Navigation ── */
 .coc-modal-nav {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 2.2rem;
-  background: rgba(10, 13, 20, 0.7);
+  gap: 6px;
+  padding: 6px clamp(1.1rem, 2.5vw, 1.8rem);
+  background: rgba(10, 13, 20, 0.8);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  overflow-x: auto;
+  flex-shrink: 0;
+  flex-wrap: wrap; /* Zero horizontal scrollbar! */
 }
 
 .coc-tab-btn {
   background: transparent;
   border: none;
   color: rgba(255, 255, 255, 0.6);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  padding: 8px 14px;
-  border-radius: 8px;
+  padding: 6px 11px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
@@ -304,15 +303,42 @@
   box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.35);
 }
 
-.coc-refresh-btn {
+.coc-nav-actions {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.coc-deeplink-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.coc-deeplink-btn:hover {
+  background: #0284c7;
+  color: #fff;
+  border-color: #38bdf8;
+}
+
+.coc-refresh-btn {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.14);
   color: #cbd5e1;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 8px;
+  padding: 5px 10px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -320,67 +346,87 @@
 .coc-refresh-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
-  border-color: rgba(255, 255, 255, 0.3);
 }
 
-/* ── Modal Body ── */
+/* ── Modal Body (With Sleek Slim Scrollbars) ── */
 .coc-modal-body {
-  padding: 1.8rem 2.2rem 2.5rem 2.2rem;
+  padding: clamp(1rem, 2vh, 1.4rem) clamp(1.1rem, 2.5vw, 1.8rem) 1.5rem;
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(245, 158, 11, 0.35) rgba(255, 255, 255, 0.02);
+}
+
+.coc-modal-body::-webkit-scrollbar {
+  width: 5px;
+}
+
+.coc-modal-body::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 999px;
+}
+
+.coc-modal-body::-webkit-scrollbar-thumb {
+  background: rgba(245, 158, 11, 0.3);
+  border-radius: 999px;
+}
+
+.coc-modal-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 158, 11, 0.65);
 }
 
 .coc-section-heading {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .coc-section-heading h3 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 800;
   color: #f1f5f9;
 }
 
 .coc-section-desc {
-  font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .coc-heading-with-badge {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .coc-epic-badge {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 6px;
+  padding: 1px 6px;
+  border-radius: 5px;
   background: rgba(168, 85, 247, 0.2);
   border: 1px solid rgba(168, 85, 247, 0.45);
   color: #c084fc;
 }
 
 .mt-6 {
-  margin-top: 1.6rem;
+  margin-top: 1.25rem;
 }
 
 /* ── Heroes Grid ── */
 .coc-heroes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  gap: 10px;
 }
 
 .coc-hero-card {
   background: rgba(22, 27, 34, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 12px 14px;
+  border-radius: 10px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   transition: transform 0.15s ease, border-color 0.15s ease;
 }
 
@@ -401,13 +447,13 @@
 }
 
 .coc-hero-name {
-  font-size: 0.88rem;
+  font-size: 0.84rem;
   font-weight: 700;
   color: #fff;
 }
 
 .coc-hero-level {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: #94a3b8;
 }
@@ -417,22 +463,22 @@
 }
 
 .coc-hero-sub {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   color: rgba(255, 255, 255, 0.45);
 }
 
 /* ── Progress Bars ── */
 .coc-progress-bar-wrap {
   width: 100%;
-  height: 6px;
+  height: 5px;
   background: rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
+  border-radius: 5px;
   overflow: hidden;
 }
 
 .coc-progress-bar-fill {
   height: 100%;
-  border-radius: 6px;
+  border-radius: 5px;
   transition: width 0.4s ease;
 }
 
@@ -459,18 +505,18 @@
 /* ── Equipment Grid ── */
 .coc-equipment-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
 }
 
 .coc-eq-card {
   background: rgba(22, 27, 34, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 10px;
-  padding: 10px 12px;
+  border-radius: 9px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
 }
 
 .coc-eq-card.epic {
@@ -489,23 +535,22 @@
 }
 
 .coc-eq-title {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: #fff;
 }
 
 .coc-eq-type {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 800;
   color: #c084fc;
-  letter-spacing: 0.04em;
 }
 
 .coc-eq-level-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   color: #e2e8f0;
 }
 
@@ -514,42 +559,42 @@
 }
 
 .coc-eq-max-tag {
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   font-weight: 800;
   background: #facc15;
   color: #78350f;
-  padding: 1px 5px;
-  border-radius: 4px;
+  padding: 1px 4px;
+  border-radius: 3px;
 }
 
 /* ── Clan Card ── */
 .coc-clan-card {
   background: rgba(22, 27, 34, 0.85);
   border: 1px solid rgba(56, 189, 248, 0.25);
-  border-radius: 16px;
-  padding: 1.5rem;
+  border-radius: 14px;
+  padding: 1.2rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .coc-clan-header {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
 }
 
 .coc-clan-badge-img {
-  width: 72px;
-  height: 72px;
+  width: 60px;
+  height: 60px;
   object-fit: contain;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6));
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
 }
 
 .coc-clan-identity {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 }
 
 .coc-clan-tag-row {
@@ -560,67 +605,67 @@
 
 .coc-clan-tag {
   font-family: monospace;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: rgba(255, 255, 255, 0.5);
 }
 
 .coc-clan-role {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
   color: #38bdf8;
   background: rgba(56, 189, 248, 0.12);
-  padding: 2px 6px;
+  padding: 1px 5px;
   border-radius: 4px;
 }
 
 .coc-clan-title {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: 900;
   color: #fff;
 }
 
 .coc-clan-meta {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: #94a3b8;
 }
 
 .coc-clan-desc {
   margin: 0;
-  padding: 10px 14px;
+  padding: 8px 12px;
   background: rgba(0, 0, 0, 0.25);
   border-left: 3px solid #38bdf8;
   border-radius: 4px;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: #cbd5e1;
   font-style: italic;
 }
 
 .coc-clan-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
 }
 
 .coc-clan-stat-item {
   background: rgba(13, 17, 23, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  padding: 10px 12px;
+  border-radius: 8px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .coc-clan-stat-item .label {
-  font-size: 0.7rem;
+  font-size: 0.66rem;
   color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
 }
 
 .coc-clan-stat-item .value {
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 800;
   color: #fff;
 }
@@ -629,52 +674,83 @@
 .coc-village-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
+  gap: 10px;
 }
 
 .coc-village-card {
   background: rgba(22, 27, 34, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 14px 16px;
+  border-radius: 10px;
+  padding: 12px 14px;
 }
 
 .coc-village-card h4 {
-  margin: 0 0 10px 0;
-  font-size: 0.95rem;
+  margin: 0 0 8px 0;
+  font-size: 0.88rem;
   font-weight: 800;
   color: #f1f5f9;
 }
 
 .coc-village-card ul {
   margin: 0;
-  padding-left: 1.2rem;
+  padding-left: 1.1rem;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .coc-village-card li {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: #cbd5e1;
+}
+
+/* ── API Info Box (Explaining Base Layout & Skins) ── */
+.coc-api-notice-box {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-top: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.coc-api-notice-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.coc-api-notice-content h5 {
+  margin: 0 0 3px 0;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #fde047;
+}
+
+.coc-api-notice-content p {
+  margin: 0;
+  font-size: 0.74rem;
+  color: #e2e8f0;
+  line-height: 1.5;
 }
 
 /* ── Spells Grid ── */
 .coc-spells-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
 }
 
 .coc-spell-card {
   position: relative;
   background: rgba(22, 27, 34, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 10px;
-  padding: 10px 12px;
+  border-radius: 8px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .coc-spell-card.maxed {
@@ -688,52 +764,52 @@
 }
 
 .coc-spell-name {
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   font-weight: 700;
   color: #fff;
 }
 
 .coc-spell-level {
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   color: #94a3b8;
 }
 
 .coc-max-pill {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  font-size: 0.6rem;
+  top: 6px;
+  right: 6px;
+  font-size: 0.58rem;
   font-weight: 800;
   background: rgba(16, 185, 129, 0.2);
   color: #34d399;
   padding: 1px 4px;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 .coc-army-summary-box {
   background: rgba(22, 27, 34, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 14px 16px;
+  border-radius: 10px;
+  padding: 12px 14px;
 }
 
 .coc-army-summary-box p {
-  margin: 0 0 10px 0;
-  font-size: 0.85rem;
+  margin: 0 0 8px 0;
+  font-size: 0.8rem;
   color: #e2e8f0;
 }
 
 .coc-troops-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px;
 }
 
 .coc-troop-tag {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 6px;
+  padding: 2px 7px;
+  border-radius: 5px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #cbd5e1;
@@ -749,21 +825,21 @@
 .coc-achievements-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .coc-ach-item {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   background: rgba(22, 27, 34, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  padding: 12px 16px;
+  border-radius: 8px;
+  padding: 10px 14px;
 }
 
 .coc-ach-stars {
-  font-size: 1.1rem;
+  font-size: 1rem;
   letter-spacing: -2px;
   flex-shrink: 0;
 }
@@ -774,34 +850,43 @@
 
 .coc-ach-title {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 800;
   color: #fff;
 }
 
 .coc-ach-desc {
   margin: 2px 0 0 0;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   color: #94a3b8;
 }
 
 .coc-ach-sub {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: #facc15;
   font-weight: 600;
 }
 
 .coc-ach-done-badge {
-  font-size: 0.7rem;
+  font-size: 0.66rem;
   font-weight: 800;
   color: #34d399;
   background: rgba(16, 185, 129, 0.15);
   border: 1px solid rgba(16, 185, 129, 0.35);
-  padding: 3px 8px;
-  border-radius: 6px;
+  padding: 2px 6px;
+  border-radius: 5px;
 }
 
-/* ── Responsive ── */
+/* ── Responsive Screen Space Adjustments ── */
+@media (max-height: 760px) {
+  .coc-modal-container {
+    height: 94vh;
+  }
+  .coc-quick-stats {
+    display: none; /* Hide quick stats on very short screens to maximize hero/body visibility */
+  }
+}
+
 @media (max-width: 768px) {
   .coc-quick-stats {
     grid-template-columns: repeat(2, 1fr);
@@ -809,13 +894,9 @@
   .coc-village-grid {
     grid-template-columns: 1fr;
   }
-  .coc-modal-header {
-    padding: 1.5rem;
-  }
-  .coc-modal-body {
-    padding: 1.2rem 1.5rem;
-  }
-  .coc-modal-nav {
-    padding: 8px 1.5rem;
+  .coc-nav-actions {
+    width: 100%;
+    margin-top: 6px;
+    justify-content: flex-end;
   }
 }

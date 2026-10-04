@@ -145,17 +145,30 @@ export default function ClashOfClansModal({ isOpen, onClose, cocData, onRefresh 
             🏆 Achievements ({achievements.filter((a) => a.stars === 3).length} Completed)
           </button>
 
-          {onRefresh && (
-            <button
-              className="coc-refresh-btn"
-              onClick={handleRefreshClick}
-              disabled={refreshing}
-              title="Refresh live stats from Clash of Clans API"
+          <div className="coc-nav-actions">
+            <a
+              href={`https://link.clashofclans.com/en?action=OpenPlayerProfile&tag=${(player.tag || "").replace("#", "")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="coc-deeplink-btn"
+              title="Open player profile and live base directly in Clash of Clans"
             >
-              {refreshing ? "🔄 Refreshing…" : "🔄 Refresh API"}
-            </button>
-          )}
+              ⚔️ Open in Game
+            </a>
+
+            {onRefresh && (
+              <button
+                className="coc-refresh-btn"
+                onClick={handleRefreshClick}
+                disabled={refreshing}
+                title="Refresh live stats from Clash of Clans API"
+              >
+                {refreshing ? "🔄 Refreshing…" : "🔄 Refresh"}
+              </button>
+            )}
+          </div>
         </nav>
+
 
         {/* Modal Body */}
         <main className="coc-modal-body">
@@ -338,8 +351,20 @@ export default function ClashOfClansModal({ isOpen, onClose, cocData, onRefresh 
                   </ul>
                 </div>
               </div>
+
+              {/* API Capabilities Note */}
+              <div className="coc-api-notice-box">
+                <span className="coc-api-notice-icon">ℹ️</span>
+                <div className="coc-api-notice-content">
+                  <h5>About Base Layout Pictures & Hero Skins</h5>
+                  <p>
+                    The official Supercell REST API delivers numerical progression metrics, levels, and battle data. It does not provide rendered image files of player base layouts or equipped hero skins. You can view the live base layout and equipped skins in-game via the <strong>Open in Game</strong> button above.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
+
 
           {/* TAB 3: SPELLS & ARMY */}
           {activeTab === "spells" && (
