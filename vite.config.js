@@ -448,7 +448,7 @@ function cocSyncPlugin(env) {
             title: "Clash of Clans",
             platform: "supercell",
             genre: "Strategy • Base Building",
-            coverArtUrl: "/icons/gaming/clash-of-clans-cover.jpg",
+            coverArtUrl: "/icons/gaming/coc/clash-of-clans-cover.jpg",
             status: "in_progress",
             priority: "high",
             difficulty: "epic",

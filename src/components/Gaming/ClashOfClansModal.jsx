@@ -74,6 +74,21 @@ export default function ClashOfClansModal({ isOpen, onClose, cocData, onRefresh 
             </div>
 
             <div className="coc-player-identity">
+              <a
+                href="/icons/gaming/coc/clash-of-clans-cover.jpg"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="coc-header-avatar-link"
+                title="View full resolution Barbarian King artwork in new tab"
+              >
+                <img
+                  src="/icons/gaming/coc/clash-of-clans-cover.jpg"
+                  alt="Clash of Clans Barbarian King"
+                  className="coc-header-avatar-img"
+                  loading="lazy"
+                />
+                <span className="coc-avatar-zoom-icon">↗</span>
+              </a>
               <div className="coc-th-badge">
                 <span className="coc-th-num">{player.townHallLevel || 16}</span>
                 <span className="coc-th-label">TH</span>
@@ -349,6 +364,57 @@ export default function ClashOfClansModal({ isOpen, onClose, cocData, onRefresh 
                     <li><strong>Best Trophies:</strong> {player.bestBuilderBaseTrophies?.toLocaleString() || 5102} 🏆</li>
                     <li><strong>League:</strong> {player.builderBaseLeague?.name || "Emerald League III"}</li>
                   </ul>
+                </div>
+              </div>
+
+              {/* Town Hall 16 Base Layout Showcase */}
+              <div className="coc-section-heading mt-6">
+                <div className="coc-heading-with-badge">
+                  <h3>🏰 Active Town Hall 16 Village Layout</h3>
+                  <span className="coc-epic-badge">Ultra HD • 7.8 MB</span>
+                </div>
+                <span className="coc-section-desc">
+                  Current war & defense layout showing Giga Inferno weapon, monolith defense, and core compartments
+                </span>
+              </div>
+
+              <div className="coc-base-showcase-box">
+                <div className="coc-base-img-container">
+                  <img
+                    src="/icons/gaming/coc/clash-of-clans-base.png"
+                    alt="Town Hall 16 Village Base Layout"
+                    className="coc-base-full-img"
+                    loading="lazy"
+                  />
+                  <a
+                    href="/icons/gaming/coc/clash-of-clans-base.png"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="coc-base-zoom-badge"
+                    title="Open full resolution (7.8 MB) base layout screenshot in new tab"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                    <span>Open High-Res Base Layout (New Tab)</span>
+                  </a>
+                </div>
+                <div className="coc-base-footer-bar">
+                  <div className="coc-base-status-tag">
+                    <span className="coc-dot-indicator green" /> TH16 War & Trophy Defense
+                  </div>
+                  <span className="coc-base-hint">Click the button above to view every defense in uncompressed full detail</span>
                 </div>
               </div>
 

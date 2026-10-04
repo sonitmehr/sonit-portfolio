@@ -8,18 +8,22 @@ import "./GamingIcons.css";
  */
 export const GAMING_ASSETS = {
   trophies: {
-    platinum: "/icons/gaming/trophy-platinum.png",
-    gold: "/icons/gaming/trophy-gold.png",
-    silver: "/icons/gaming/trophy-silver.png",
-    bronze: "/icons/gaming/trophy-bronze.png",
+    platinum: "/icons/gaming/trophies/trophy-platinum.png",
+    gold: "/icons/gaming/trophies/trophy-gold.png",
+    silver: "/icons/gaming/trophies/trophy-silver.png",
+    bronze: "/icons/gaming/trophies/trophy-bronze.png",
   },
   platforms: {
-    steam: "/icons/gaming/steam-logo.png",
-    psn: "/icons/gaming/playstation-logo.png",
-    psnWhite: "/icons/gaming/playstation-logo-white.png",
+    steam: "/icons/gaming/platforms/steam-logo.png",
+    psn: "/icons/gaming/platforms/playstation-logo.png",
+    psnWhite: "/icons/gaming/platforms/playstation-logo-white.png",
   },
   ribbons: {
-    steam100: "/icons/gaming/steam-ribbon.png",
+    steam100: "/icons/gaming/ribbons/steam-ribbon.png",
+  },
+  coc: {
+    cover: "/icons/gaming/coc/clash-of-clans-cover.jpg",
+    base: "/icons/gaming/coc/clash-of-clans-base.png",
   },
 };
 

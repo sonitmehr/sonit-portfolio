@@ -850,3 +850,76 @@
   border-color: #fde047;
 }
 
+/* ── Clash of Clans Card Cover Art Presentation ── */
+.topic-item-img-wrap-coc {
+  position: relative;
+  background: radial-gradient(circle at center, #1e2230 0%, #0a0d14 100%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+.topic-item-img-wrap-coc .topic-item-img-blur-bg {
+  position: absolute;
+  inset: -12px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(14px) brightness(0.35) saturate(1.4);
+  opacity: 0.9;
+  transform: scale(1.15);
+  pointer-events: none;
+}
+
+.topic-item-img-coc {
+  position: relative !important;
+  z-index: 2 !important;
+  width: auto !important;
+  height: 86% !important;
+  max-width: 86% !important;
+  aspect-ratio: 1 / 1 !important;
+  object-fit: contain !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.75), 0 0 12px rgba(245, 158, 11, 0.25) !important;
+  border: 1.5px solid rgba(253, 224, 71, 0.35) !important;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease !important;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.topic-item-card-coc:hover .topic-item-img-coc {
+  transform: scale(1.06) rotate(-0.5deg) !important;
+  box-shadow: 0 14px 30px -4px rgba(0, 0, 0, 0.85), 0 0 20px rgba(245, 158, 11, 0.45) !important;
+  border-color: rgba(253, 224, 71, 0.7) !important;
+}
+
+.coc-card-img-expand-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 20px;
+  background: rgba(13, 17, 23, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f1f5f9;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.coc-card-img-expand-btn:hover {
+  background: #f59e0b;
+  color: #78350f;
+  border-color: #fde047;
+  transform: translateY(-1px) scale(1.04);
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+}
+

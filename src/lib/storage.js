@@ -90,22 +90,23 @@ export async function uploadGamingBrandAsset(blob, filename) {
  */
 export async function syncAllGamingAssetsToStorage(onProgress) {
   const assets = [
-    "trophy-platinum.png",
-    "trophy-gold.png",
-    "trophy-silver.png",
-    "trophy-bronze.png",
-    "steam-ribbon.png",
-    "steam-logo.png",
-    "playstation-logo.png",
-    "playstation-logo-white.png",
+    { path: "trophies/trophy-platinum.png", filename: "trophy-platinum.png" },
+    { path: "trophies/trophy-gold.png", filename: "trophy-gold.png" },
+    { path: "trophies/trophy-silver.png", filename: "trophy-silver.png" },
+    { path: "trophies/trophy-bronze.png", filename: "trophy-bronze.png" },
+    { path: "ribbons/steam-ribbon.png", filename: "steam-ribbon.png" },
+    { path: "platforms/steam-logo.png", filename: "steam-logo.png" },
+    { path: "platforms/playstation-logo.png", filename: "playstation-logo.png" },
+    { path: "platforms/playstation-logo-white.png", filename: "playstation-logo-white.png" },
+    { path: "coc/clash-of-clans-cover.jpg", filename: "clash-of-clans-cover.jpg" },
   ];
 
   const results = {};
   for (let i = 0; i < assets.length; i++) {
-    const filename = assets[i];
+    const { path, filename } = assets[i];
     if (onProgress) onProgress(i + 1, assets.length, filename);
-    const res = await fetch(`/icons/gaming/${filename}`);
-    if (!res.ok) throw new Error(`Could not read /icons/gaming/${filename}`);
+    const res = await fetch(`/icons/gaming/${path}`);
+    if (!res.ok) throw new Error(`Could not read /icons/gaming/${path}`);
     const blob = await res.blob();
     const url = await uploadGamingBrandAsset(blob, filename);
     results[filename] = url;

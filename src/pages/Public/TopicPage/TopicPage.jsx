@@ -89,14 +89,48 @@ function ItemCard({ item, index, isHighlighted = false, onOpenCocModal }) {
       aria-label={isSupercell ? `View Clash of Clans village and hero details for ${item.title}` : undefined}
     >
       {item.imageUrl && (
-        <div className="topic-item-img-wrap">
+        <div className={`topic-item-img-wrap ${isSupercell ? "topic-item-img-wrap-coc" : ""}`}>
+          {isSupercell && (
+            <div
+              className="topic-item-img-blur-bg"
+              style={{ backgroundImage: `url(${item.imageUrl})` }}
+              aria-hidden="true"
+            />
+          )}
           <img
             src={item.imageUrl}
             alt={item.title}
-            className="topic-item-img"
+            className={`topic-item-img ${isSupercell ? "topic-item-img-coc" : ""}`}
             loading="lazy"
             onError={(e) => (e.target.parentElement.style.display = "none")}
           />
+          {isSupercell && (
+            <a
+              href={item.imageUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="coc-card-img-expand-btn"
+              title="Open full high-resolution cover in new tab"
+              onClick={(e) => e.stopPropagation()}
+              aria-label="Open high-resolution cover image in new tab"
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+              <span>Full Res</span>
+            </a>
+          )}
         </div>
       )}
       <div className="topic-item-body">
@@ -363,7 +397,10 @@ export default function TopicPage({ slug: propSlug }) {
                 id: d.id,
                 title: data.title,
                 description: hasCustomNote ? data.personalNotes : cleanGenre || "",
-                imageUrl: data.coverArtUrl || (isSupercellItem ? "/icons/gaming/clash-of-clans-cover.jpg" : null),
+                imageUrl:
+                  data.coverArtUrl === "/icons/gaming/clash-of-clans-cover.jpg"
+                    ? "/icons/gaming/coc/clash-of-clans-cover.jpg"
+                    : data.coverArtUrl || (isSupercellItem ? "/icons/gaming/coc/clash-of-clans-cover.jpg" : null),
                 platform: data.platform,
                 category: cleanGenre,
                 status: data.status,
@@ -394,7 +431,7 @@ export default function TopicPage({ slug: propSlug }) {
                 if (cocJson.success && cocJson.game) {
                   const liveCoc = {
                     ...cocJson.game,
-                    imageUrl: cocJson.game.coverArtUrl || "/icons/gaming/clash-of-clans-cover.jpg",
+                    imageUrl: cocJson.game.coverArtUrl || "/icons/gaming/coc/clash-of-clans-cover.jpg",
                     isCoc: true,
                     cocData: cocJson.game.cocData || cocJson.player,
                     order: 0,
