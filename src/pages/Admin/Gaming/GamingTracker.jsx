@@ -812,14 +812,17 @@ const GamingTracker = () => {
           (g) => g.id === docId || (g.steamAppId && g.steamAppId === game.steamAppId)
         );
         if (existing) {
-          payload.status = (game.achievementsTotal > 0 && game.achievementsUnlocked === game.achievementsTotal)
-            ? "completed"
-            : (existing.status || payload.status);
+          const isCompleted = (game.achievementsTotal > 0 && game.achievementsUnlocked === game.achievementsTotal);
+          payload.status = isCompleted ? "completed" : (existing.status || payload.status);
           payload.priority = existing.priority || payload.priority;
           payload.isPublic = Boolean(existing.isPublic);
-          payload.personalNotes = existing.personalNotes || payload.personalNotes;
+          payload.personalNotes = existing.personalNotes || payload.personalNotes || "";
           payload.rating = existing.rating ?? payload.rating;
+          payload.genre = existing.genre || payload.genre || "";
+          payload.order = existing.order ?? payload.order ?? 99;
+          payload.coverArtUrl = existing.coverArtUrl || payload.coverArtUrl;
         } else {
+          payload.isPublic = false;
           payload.createdAt = serverTimestamp();
         }
 
@@ -910,12 +913,17 @@ const GamingTracker = () => {
           (g) => g.id === docId || (g.psnCommunicationId && g.psnCommunicationId === game.psnCommunicationId)
         );
         if (existing) {
-          payload.status = game.status || existing.status || payload.status;
+          const isCompleted = (game.trophies?.platinum > 0) || (game.achievementsTotal > 0 && game.achievementsUnlocked === game.achievementsTotal);
+          payload.status = isCompleted ? "completed" : (existing.status || game.status || "not_started");
           payload.priority = existing.priority || payload.priority;
           payload.isPublic = Boolean(existing.isPublic);
-          payload.personalNotes = existing.personalNotes || payload.personalNotes;
+          payload.personalNotes = existing.personalNotes || payload.personalNotes || "";
           payload.rating = existing.rating ?? payload.rating;
+          payload.genre = existing.genre || payload.genre || "";
+          payload.order = existing.order ?? payload.order ?? 99;
+          payload.coverArtUrl = existing.coverArtUrl || payload.coverArtUrl;
         } else {
+          payload.isPublic = false;
           payload.createdAt = serverTimestamp();
         }
 

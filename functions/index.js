@@ -25,7 +25,8 @@ const {
 } = require("psn-api");
 
 initializeApp();
-const db = getFirestore();
+const FIRESTORE_DATABASE_ID = process.env.FIRESTORE_DATABASE_ID;
+const db = FIRESTORE_DATABASE_ID ? getFirestore(FIRESTORE_DATABASE_ID) : getFirestore();
 
 // ── Environment params ─────────────────────────────────────────────────────
 const STEAM_API_KEY = defineString("STEAM_API_KEY");
@@ -110,30 +111,44 @@ async function doSteamSync() {
   const ownedData = await ownedRes.json();
   const rawGames = ownedData.response?.games || [];
 
+  // Pre-fetch existing Steam documents to safeguard against overwriting user curation (isPublic, status, notes, rating, etc.)
+  const existingSnaps = await db.collection("gamingProgress").where("platform", "==", "steam").get();
+  const existingMap = new Map();
+  existingSnaps.forEach((doc) => existingMap.set(doc.id, doc.data()));
+
   // 2. Build game objects
   const games = rawGames.map((g) => {
     const hours = Math.round((g.playtime_forever / 60) * 10) / 10;
     const { difficulty, xpValue } = getDifficultyFromHours(hours);
+    const docId = `steam_${g.appid}`;
+    const existing = existingMap.get(docId);
+
+    const safeHours = Math.max(hours, Number(existing?.playtimeHours) || 0);
+    const safeMinutes = Math.max(g.playtime_forever, Number(existing?.playtimeMinutes) || 0);
+
     return {
-      id: `steam_${g.appid}`,
+      id: docId,
       steamAppId: g.appid,
-      title: g.name,
+      title: existing?.title || g.name,
       platform: "steam",
-      genre: "",
-      playtimeHours: hours,
-      playtimeMinutes: g.playtime_forever,
-      coverArtUrl: `https://steamcdn-a.akamaihd.net/steam/apps/${g.appid}/header.jpg`,
-      status: hours > 0 ? "in_progress" : "not_started",
-      priority: hours >= 20 ? "high" : "medium",
+      genre: existing?.genre || "",
+      playtimeHours: safeHours,
+      playtimeMinutes: safeMinutes,
+      coverArtUrl: existing?.coverArtUrl || `https://steamcdn-a.akamaihd.net/steam/apps/${g.appid}/header.jpg`,
+      status: existing?.status || (safeHours > 0 ? "in_progress" : "not_started"),
+      priority: existing?.priority || (safeHours >= 20 ? "high" : "medium"),
       difficulty,
       xpValue,
-      achievementsTotal: 0,
-      achievementsUnlocked: 0,
-      trophies: { platinum: 0, gold: 0, silver: 0, bronze: 0 },
-      rating: null,
-      personalNotes: "",
-      isPublic: false,
+      achievementsTotal: Number(existing?.achievementsTotal) || 0,
+      achievementsUnlocked: Number(existing?.achievementsUnlocked) || 0,
+      trophies: existing?.trophies || { platinum: 0, gold: 0, silver: 0, bronze: 0 },
+      rating: existing?.rating ?? null,
+      personalNotes: existing?.personalNotes || "",
+      isPublic: existing ? Boolean(existing.isPublic) : false,
+      order: existing?.order ?? 99,
       lastSyncedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      ...(existing ? {} : { createdAt: FieldValue.serverTimestamp() }),
     };
   });
 
@@ -304,9 +319,10 @@ async function doPSNSync() {
       const earnedTrophies = earnedPlatinum + earnedGold + earnedSilver + earnedBronze;
       const completionPct = totalTrophies > 0 ? Math.round((earnedTrophies / totalTrophies) * 100) : 0;
 
-      let status = "not_started";
-      if (earnedPlatinum > 0 || (totalTrophies > 0 && earnedTrophies === totalTrophies)) status = "completed";
-      else if (earnedTrophies > 0 || hours > 0) status = "in_progress";
+      const isCompleted = earnedPlatinum > 0 || (totalTrophies > 0 && earnedTrophies === totalTrophies);
+      const defaultStatus = (earnedTrophies > 0 || hours > 0) ? "in_progress" : "not_started";
+      // Auto-promote to completed if platinum / 100% unlocked; otherwise preserve user's existing status
+      const finalStatus = isCompleted ? "completed" : (existing?.status || defaultStatus);
 
       const { difficulty, xpValue } = getDifficultyFromHours(
         hours > 0 ? hours : (earnedTrophies >= 50 ? 50 : earnedTrophies >= 20 ? 25 : 5)
@@ -315,15 +331,15 @@ async function doPSNSync() {
       return {
         id: docId,
         psnCommunicationId: npCommunicationId,
-        title: title.trophyTitleName,
+        title: existing?.title || title.trophyTitleName,
         platform: "psn",
-        genre,
-        playtimeHours: hours,
-        playtimeMinutes: minutes,
-        playCount,
-        coverArtUrl: title.trophyTitleIconUrl || playInfo.imageUrl || "",
-        status: (existing?.status && status === "not_started") ? existing.status : status,
-        priority: (completionPct >= 50 || hours >= 20) ? "high" : (existing?.priority || "medium"),
+        genre: existing?.genre || genre,
+        playtimeHours: Math.max(hours, Number(existing?.playtimeHours) || 0),
+        playtimeMinutes: Math.max(minutes, Number(existing?.playtimeMinutes) || 0),
+        playCount: Math.max(playCount, Number(existing?.playCount) || 0),
+        coverArtUrl: existing?.coverArtUrl || title.trophyTitleIconUrl || playInfo.imageUrl || "",
+        status: finalStatus,
+        priority: existing?.priority || ((completionPct >= 50 || hours >= 20) ? "high" : "medium"),
         difficulty,
         xpValue,
         achievementsTotal: totalTrophies,
@@ -338,7 +354,10 @@ async function doPSNSync() {
         rating: existing?.rating ?? null,
         personalNotes: existing?.personalNotes || "",
         isPublic: existing ? Boolean(existing.isPublic) : false,
+        order: existing?.order ?? 99,
         lastSyncedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+        ...(existing ? {} : { createdAt: FieldValue.serverTimestamp() }),
       };
     })
   );
